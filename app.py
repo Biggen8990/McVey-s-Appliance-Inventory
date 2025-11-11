@@ -44,23 +44,56 @@ def load_from_file(filename="appliance_inventory.json"):
     except FileNotFoundError:
         print("No saved file found. Starting empty.\n")
 
+def edit_appliance():
+    """Edit the brand, model, or status of an appliance."""
+    item_number = input("Enter Store Item Number to edit: ")
+    for app in appliances:
+        if app['item_number'] == item_number:
+            print(f"Current info: {app}")
+            print("Leave blank to keep current value.")
+            app['brand'] = input(f"Brand [{app['brand']}]: ") or app['brand']
+            app['model'] = input(f"Model [{app['model']}]: ") or app['model']
+            app['serial'] = input(f"Serial [{app['serial']}]: ") or app['serial']
+            app['status'] = input(f"Status [{app['status']}]: ") or app['status']
+            print("Appliance updated!\n")
+            return
+    print("Appliance not found.\n")
+
+def search_appliance():
+    """Search appliances by brand or status."""
+    term = input("Search by brand or status: ").lower()
+    results = [app for app in appliances
+               if term in app['brand'].lower() or term in app['status'].lower()]
+    if not results:
+        print("No matches found.\n")
+        return
+    for app in results:
+        print(app)
+    print()
+
 def menu():
     while True:
         print("1. Add Appliance")
         print("2. List Appliances")
-        print("3. Save")
-        print("4. Load")
-        print("5. Quit")
+        print("3. Edit Appliance")
+        print("4. Search for Appliance")
+        print("5. Save")
+        print("6. Load")
+        print("7. Quit")
         choice = input("Select an option: ")
         if choice == '1':
             add_appliance()
         elif choice == '2':
             list_appliances()
         elif choice == '3':
-            save_to_file()
+            edit_appliance()
         elif choice == '4':
-            load_from_file()
+            search_appliance()
         elif choice == '5':
+            save_to_file()
+        elif choice == '6':
+            load_from_file()
+        elif choice == '7':
             print("Goodbye!")
             break
         else:
