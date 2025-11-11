@@ -61,10 +61,10 @@ def edit_appliance():
     print("Appliance not found.\n")
 
 def search_appliance():
-    """Search appliances by brand or store."""
-    term = input("Search by brand or store: ").lower()
+    """Search appliances by brand or store name."""
+    term = input("Search by brand or store name: ").lower()
     results = [app for app in appliances
-               if term in app['brand'].lower() or term in app['store'].lower()]
+               if term in app['brand'].lower() or term in app['store_name'].lower()]
     if not results:
         print("No matches found.\n")
         return
