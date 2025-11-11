@@ -8,12 +8,14 @@ def add_appliance():
     item_number = input("Store Item Number: ")
     brand = input("Brand: ")
     model = input("Model: ")
+    serial = input("Serial: ")
     status = input("Status: ")
     appliances.append({
         'store_name': store_name,
         'item_number': item_number,
         'brand': brand,
         'model': model,
+        'serial': serial,
         'status': status
     })
     print("Appliance added!\n")
@@ -24,7 +26,7 @@ def list_appliances():
         print("No appliances in inventory.\n")
         return
     for idx, app in enumerate(appliances, 1):
-        print(f"{idx}. {app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['status']}")
+        print(f"{idx}. {app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['serial']} | {app['status']}")
     print()
 
 def save_to_file(filename="appliance_inventory.json"):
@@ -45,16 +47,17 @@ def load_from_file(filename="appliance_inventory.json"):
         print("No saved file found. Starting empty.\n")
 
 def edit_appliance():
-    """Edit the brand, model, unit number, or status of an appliance."""
+    """Edit the store name, brand, model, serial, item number, or status of an appliance."""
     item_number = input("Enter Store Item Number to edit: ")
     for app in appliances:
         if app['item_number'] == item_number:
             print(f"Current info: {app}")
             print("Leave blank to keep current value.")
+            app['store_name'] = input(f"Store Name [{app['store_name']}]: ") or app ['store_name']
             app['brand'] = input(f"Brand [{app['brand']}]: ") or app['brand']
             app['model'] = input(f"Model [{app['model']}]: ") or app['model']
             app['serial'] = input(f"Serial [{app['serial']}]: ") or app['serial']
-            app['unit number'] = input(f"Unit number [{app['unit number']}]: ") or app['unit number']
+            app['item_number'] = input(f"Item number [{app['item_number']}]: ") or app['item_number']
             app['status'] = input(f"Status [{app['status']}]: ") or app['status']
             print("Appliance updated!\n")
             return
@@ -69,7 +72,7 @@ def search_appliance():
         print("No matches found.\n")
         return
     for app in results:
-        print(app)
+        print(f"{app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['serial']} | {app['status']}")
     print()
 
 def remove_appliance():
@@ -129,3 +132,4 @@ def menu():
 
 if __name__ == "__main__":
     menu()
+     
