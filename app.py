@@ -1,22 +1,41 @@
 import json
+import csv
+from datetime import datetime
 
 appliances = []
 
+STATUS_OPTIONS = ["In", "Checked", "Parts Ordered", "Repaired", "Loaded" ]
+def choose_status():
+    print("\nSelect a status:")
+    for idx, status in enumerate(STATUS_OPTIONS, 1):
+        print(f"{idx}. {status}")
+    while True:
+        choice = input("Enter the status number: ")
+        if choice.isdigit() and 1 <= int(choice) <= len(STATUS_OPTIONS):
+            return STATUS_OPTIONS[int(choice) - 1]
+        print("Invalid choice, try again.")
+
 def add_appliance():
-    """Add a new appliance with basic info."""
+    """Add a new appliance with basic info, preventing duplicates within the same store."""
     store_name = input("Store name: ")
     item_number = input("Store Item Number: ")
+    #duplicate check
+    for app in appliances:
+        if app['store_name'].lower() == store_name.lower() and app['item_number'] == item_number:    #11-11-2025
+            print("Error: An appliance with this store and item number already exists!\n")
+            return
     brand = input("Brand: ")
     model = input("Model: ")
     serial = input("Serial: ")
-    status = input("Status: ")
+    status = choose_status()
     appliances.append({
         'store_name': store_name,
         'item_number': item_number,
         'brand': brand,
         'model': model,
         'serial': serial,
-        'status': status
+        'status': status,
+        'history': [(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), status)]
     })
     print("Appliance added!\n")
 
@@ -26,7 +45,7 @@ def list_appliances():
         print("No appliances in inventory.\n")
         return
     for idx, app in enumerate(appliances, 1):
-        print(f"{idx}. {app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['serial']} | {app['status']}")
+        print(f"{idx}. {app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['serial']} | {app['status']}")#J
     print()
 
 def save_to_file(filename="appliance_inventory.json"):
@@ -53,14 +72,23 @@ def edit_appliance():
         if app['item_number'] == item_number:
             print(f"Current info: {app}")
             print("Leave blank to keep current value.")
-            app['store_name'] = input(f"Store Name [{app['store_name']}]: ") or app ['store_name']
+            app['store_name'] = input(f"Store Name [{app['store_name']}]: ") or app['store_name']
             app['brand'] = input(f"Brand [{app['brand']}]: ") or app['brand']
             app['model'] = input(f"Model [{app['model']}]: ") or app['model']
             app['serial'] = input(f"Serial [{app['serial']}]: ") or app['serial']
-            app['item_number'] = input(f"Item number [{app['item_number']}]: ") or app['item_number']
-            app['status'] = input(f"Status [{app['status']}]: ") or app['status']
-            print("Appliance updated!\n")
-            return
+            app['item_number'] = input(f"Item number [{app['item_number']}]: ") or app['item_number']#R
+            print("Current Status:", app['status'])
+            if input("Change status? (y/n): ").strip().lower() == 'y':
+                app['status'] = choose_status()
+        print("Current Status:", app['status'])
+        if input("Change status? (y/n): ").strip().lower() == 'y':
+            new_status = choose_status()
+            app['status'] = new_status
+            if 'history' not in app:
+                app['history'] = []
+            app['history'].append((datetime.now().strftime("%Y-%m-%d %H:%M:%S"), new_status))
+        print("Appliance updated!\n")
+        return
     print("Appliance not found.\n")
 
 def search_appliance():
@@ -72,7 +100,7 @@ def search_appliance():
         print("No matches found.\n")
         return
     for app in results:
-        print(f"{app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['serial']} | {app['status']}")
+        print(f"{app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['serial']} | {app['status']}")#M
     print()
 
 def remove_appliance():
@@ -95,6 +123,48 @@ def quick_summary():
     for status, count in summary.items():
         print(f"  {status.title()}: {count}")
     print()
+def view_appliance_details():
+    """Show all details and history for one appliance."""
+    item_number = input("Enter Store Item Number to view: ")
+    store_name = input("Enter Store name: ")
+    for app in appliances:
+        if app['item_number'] == item_number and app['store_name'].lower() == store_name.lower():
+            print("\nDetailed Appliance Info:")
+            print(f"Store: {app['store_name']}")
+            print(f"Item Number: {app['item_number']}")
+            print(f"Brand: {app['brand']}")
+            print(f"Model: {app['model']}")
+            print(f"Serial: {app['serial']}")
+            print(f"Status: {app['status']}")
+            # Show status history if available
+            if 'history' in app:
+                print("Status History:")
+                for entry in app['history']:
+                    if isinstance(entry, (tuple, list)) and len(entry) == 2:
+                        timestamp, stat = entry
+                        print((f" {timestamp}; {stat}"))
+                    else:
+                        print(f" {entry}")
+            print()
+            return
+    print("Appliance not found.\n")
+
+def export_to_csv(filename="appliance_inventory.csv"):
+    """Export all appliances to a CSV file."""
+    with open(filename, "w", newline="") as csvfile:
+        fieldnames = ['store_name', 'item_number', 'brand', 'model', 'serial', 'status']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for app in appliances:
+            writer.writerow({
+                'store_name': app['store_name'],
+                'item_number': app['item_number'],
+                'brand': app['brand'],
+                'model': app['model'],
+                'serial': app['serial'],
+                'status': app['status']
+            })
+    print(f"Inventory exported to '{filename}'\n")
 
 def menu():
     while True:
@@ -106,7 +176,9 @@ def menu():
         print("6. Load")
         print("7. Delete Appliance")
         print("8. Inventory Summary")
-        print("9. Quit")
+        print("9. View Appliance Details")
+        print("10. Export to CSV")
+        print("11. Quit")
         choice = input("Select an option: ")
         if choice == '1':
             add_appliance()
@@ -125,6 +197,10 @@ def menu():
         elif choice == '8':
             quick_summary()
         elif choice == '9':
+            view_appliance_details()
+        elif choice == '10':
+            export_to_csv()
+        elif choice == '11':
             print("Goodbye!")
             break
         else:
