@@ -72,6 +72,27 @@ def search_appliance():
         print(app)
     print()
 
+def remove_appliance():
+    """Delete an appliance by item number."""
+    item_number = input("Enter Store Item Number to remove: ")
+    for i, app in enumerate(appliances):
+        if app['item_number'] == item_number:
+            del appliances[i]
+            print("Appliance removed!\n")
+            return
+    print("Appliance not found.\n")
+
+def quick_summary():
+    """Print a summary of inventory by status."""
+    summary = {}
+    for app in appliances:
+        status = app['status'].lower()
+        summary[status] = summary.get(status, 0) + 1
+    print("\nInventory Summary:")
+    for status, count in summary.items():
+        print(f"  {status.title()}: {count}")
+    print()
+
 def menu():
     while True:
         print("1. Add Appliance")
@@ -80,7 +101,9 @@ def menu():
         print("4. Search for Appliance")
         print("5. Save")
         print("6. Load")
-        print("7. Quit")
+        print("7. Delete Appliance")
+        print("8. Inventory Summary")
+        print("9. Quit")
         choice = input("Select an option: ")
         if choice == '1':
             add_appliance()
@@ -95,6 +118,10 @@ def menu():
         elif choice == '6':
             load_from_file()
         elif choice == '7':
+            remove_appliance()
+        elif choice == '8':
+            quick_summary()
+        elif choice == '9':
             print("Goodbye!")
             break
         else:
