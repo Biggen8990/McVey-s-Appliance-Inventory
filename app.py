@@ -45,7 +45,7 @@ def load_from_file(filename="appliance_inventory.json"):
         print("No saved file found. Starting empty.\n")
 
 def edit_appliance():
-    """Edit the brand, model, or status of an appliance."""
+    """Edit the brand, model, unit number, or status of an appliance."""
     item_number = input("Enter Store Item Number to edit: ")
     for app in appliances:
         if app['item_number'] == item_number:
@@ -54,16 +54,17 @@ def edit_appliance():
             app['brand'] = input(f"Brand [{app['brand']}]: ") or app['brand']
             app['model'] = input(f"Model [{app['model']}]: ") or app['model']
             app['serial'] = input(f"Serial [{app['serial']}]: ") or app['serial']
+            app['unit number'] = input(f"Unit number [{app['unit number']}]: ") or app['unit number']
             app['status'] = input(f"Status [{app['status']}]: ") or app['status']
             print("Appliance updated!\n")
             return
     print("Appliance not found.\n")
 
 def search_appliance():
-    """Search appliances by brand or status."""
-    term = input("Search by brand or status: ").lower()
+    """Search appliances by brand or store."""
+    term = input("Search by brand or store: ").lower()
     results = [app for app in appliances
-               if term in app['brand'].lower() or term in app['status'].lower()]
+               if term in app['brand'].lower() or term in app['store'].lower()]
     if not results:
         print("No matches found.\n")
         return
