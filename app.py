@@ -77,9 +77,6 @@ def edit_appliance():
             app['model'] = input(f"Model [{app['model']}]: ") or app['model']
             app['serial'] = input(f"Serial [{app['serial']}]: ") or app['serial']
             app['item_number'] = input(f"Item number [{app['item_number']}]: ") or app['item_number']#R
-            print("Current Status:", app['status'])
-            if input("Change status? (y/n): ").strip().lower() == 'y':
-                app['status'] = choose_status()
         print("Current Status:", app['status'])
         if input("Change status? (y/n): ").strip().lower() == 'y':
             new_status = choose_status()
