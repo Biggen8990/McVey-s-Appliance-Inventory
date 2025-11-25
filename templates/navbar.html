@@ -1,0 +1,20 @@
+<div style="background: #eaeaea; padding: 10px;">
+    {% if session['role'] == 'admin' %}
+        <a href="/admin-dashboard">Dashboard</a>
+        <a href="/list">Appliance List</a> |
+        <a href="/add">Add Appliance</a> |
+        <a href="/archived">View Archived</a> |
+        <a href="/file-options">File Options</a> |
+        <a href="/bulk-actions">Bulk Archive/Unarchive</a> |
+        <a href="/search">Search</a> |
+        <a href="/invoice-search">Find Invoices</a> |
+        <a href="/register">Add User</a> |
+        <a href="/logout">Logout</a>
+    {% else %}
+        {% if session['role'] == 'store' %}
+            <a href="/store-portal">My Items</a> |
+            <a href="/logout">Logout</a>
+        {% endif %}
+    {% endif %}
+</div>
+<br>

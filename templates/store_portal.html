@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Store Inventory</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; color: #222; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #eaeaea; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { margin: 5px 0; }
+        h1, h2, h3 { color: #333; }
+    </style>
+</head>
+<body>
+    <div style="text-align:center; margin-bottom: 20px;">
+        <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Company Logo" style="height: 175px; width: auto;">
+    </div>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>Welcome to {{ store }} Portal</h1>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Item Number</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Serial</th>
+            <th>Status</th>
+            <th>Notes</th>
+            {% if appliances and appliances[0].invoice_file %}
+            <th>Invoice</th>
+            {% endif %}
+        </tr>
+        {% for app in appliances %}
+        <tr>
+            <td>{{ app.item_number }}</td>
+            <td>{{ app.brand }}</td>
+            <td>{{ app.model }}</td>
+            <td>{{ app.serial }}</td>
+            <td>{{ app.status }}</td>
+            <td>{{ app.notes }}</td>
+            {% if app.invoice_file %}
+            <td><a href="/invoices/{{ app.invoice_file }}">View Invoice</a></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <!-- No edit or archive buttons, strictly view-only -->
+</body>
+</html>

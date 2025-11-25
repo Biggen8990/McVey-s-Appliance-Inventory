@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Archived Appliances</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; color: #222; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #eaeaea; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { margin: 5px 0; }
+        h1, h2, h3 { color: #333; }
+    </style>
+</head>
+<body>
+    </div>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>Archived Appliances</h1>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Store</th>
+            <th>Item Number</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Serial</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Invoice</th>
+            <th>Action</th>
+            <th>Last Update</th>
+        </tr>
+        {% for app in appliances %}
+        <tr>
+            <td>{{ app.store_name }}</td>
+            <td>{{ app.item_number }}</td>
+            <td>{{ app.brand }}</td>
+            <td>{{ app.model }}</td>
+            <td>{{ app.serial }}</td>
+            <td>{{ app.status }}</td>
+            <td>{{ app.notes }}</td>
+            <td>{{ app.invoice }}</td>
+            <td>{{ app.action}}</td>
+            <td>{{ app.last_update}}</td>
+            <td><a href="/details/{{ app.store_name }}/{{ app.item_number }}">Details</a></td>
+            <td><a href="/edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a></td>
+            <td>
+                {% if app.invoice_file %}
+                    <a href="/invoices/{{ app.invoice_file }}">View</a>
+                {% endif %}
+            </td>
+            <td>
+                <form action="/unarchive/{{ app.store_name }}/{{ app.item_number }}" method="post" style="display:inline">
+                    <input type="submit" value="Unarchive">
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="/list">Back to List</a>
+</body>
+</html>

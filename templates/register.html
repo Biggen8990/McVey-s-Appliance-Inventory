@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register User</title>
+    <style>
+        /* Add your previous input/form styles here for consistency */
+        .flashes { list-style: none; padding: 0; }
+        .flashes li { margin: 6px 0; }
+        .success { color: green; font-weight: bold;}
+        .error { color: red; font-weight: bold; }
+        form { max-width: 350px; margin: auto; padding: 24px; background: #f6f6f6; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h2>Register New User</h2>
+    {% if error %}<span class="error">{{ error }}</span><br>{% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <form method="post">
+        <label>Username:</label><br>
+        <input name="username" required><br>
+        <label>Password:</label><br>
+        <input type="password" name="password" required><br>
+        <label>Role:</label><br>
+        <select name="role" id="role-select" onchange="toggleStoreField()">
+            <option value="admin">Admin</option>
+            <option value="store">Store</option>
+        </select><br>
+        <div id="store-field" style="display:none">
+            <label>Store Name (for store users):</label><br>
+            <input name="store"><br>
+        </div>
+        <input type="submit" value="Register">
+    </form>
+    <script>
+    function toggleStoreField() {
+        var role = document.getElementById("role-select").value;
+        document.getElementById("store-field").style.display = (role === "store" ? "block" : "none");
+    }
+    window.onload = toggleStoreField;
+    </script>
+</body>
+</html>

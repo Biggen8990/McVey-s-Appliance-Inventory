@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Options</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; color: #222; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #eaeaea; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { margin: 5px 0; }
+        h1, h2, h3 { color: #333; }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>File Options / Data Import & Export</h1>
+    <ul>
+        <li><a href="/export-csv">Export Appliances to CSV</a></li>
+        <li>
+            <form action="/import-csv" method="post" enctype="multipart/form-data">
+                Import Appliances from CSV: <input type="file" name="csvfile">
+                <input type="submit" value="Import">
+            </form>
+            <form action="/export-csv">
+                <input type="submit" value="Download Appliance Backup (CSV)">
+            </form>
+        </li>
+        <li><a href="/export-audit-csv">Export Audit Log to CSV</a></li>
+        <!-- Add more import/export options as needed -->
+    </ul>
+</body>
+</html>

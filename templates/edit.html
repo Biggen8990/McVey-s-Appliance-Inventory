@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Appliance</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; color: #222; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #eaeaea; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { margin: 5px 0; }
+        h1, h2, h3 { color: #333; }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>Edit Appliance</h1>
+    <form method="post" enctype="multipart/form-data">
+        Store Name: <input name="store_name" value="{{ appliance.store_name }}"><br>
+        Item Number: <input name="item_number" value="{{ appliance.item_number }}"><br>
+        Brand: <input name="brand" value="{{ appliance.brand }}"><br>
+        Model: <input name="model" value="{{ appliance.model }}"><br>
+        Serial: <input name="serial" value="{{ appliance.serial }}"><br>
+        Status:
+        <select name="status" id="status-select" onchange="toggleInvoiceField()">
+            {% for stat in status_options %}
+            <option value="{{ stat }}" {% if appliance.status == stat %}selected{% endif %}>{{ stat }}</option>
+            {% endfor %}
+        </select><br>
+        Notes: <input name="notes" value="{{ appliance.notes }}"><br>
+        <div id="invoice-field" style="display: none;">
+            Invoice: <input type="file" name="invoice" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx"><br>
+            {% if appliance.invoice_file %}
+            <a href="/invoices/{{ appliance.invoice_file }}">View Invoice</a>
+            {% endif %}
+        </div>
+        <input type="submit" value="Update">
+    </form>
+    <br>
+    <a href="/list">Back to List</a>
+
+    <script>
+    function toggleInvoiceField() {
+        var status = document.getElementById('status-select').value;
+        if (status === "Delivered" || status === "Loaded") {
+            document.getElementById('invoice-field').style.display = "block";
+        } else {
+            document.getElementById('invoice-field').style.display = "none";
+        }
+    }
+    window.onload = toggleInvoiceField;
+    </script>
+</body>
+</html>

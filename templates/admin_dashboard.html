@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; color: #222; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #eaeaea; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { margin: 5px 0; }
+        h1, h2, h3 { color: #333; }
+    </style>
+</head>
+<script>
+window.addEventListener('beforeunload', function (e) {
+        e.preventDefault();
+        e.returnValue = 'Changes may not be saved. Have you downloaded a backup?';
+    });
+</script>
+<body>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>Admin Dashboard: Store Inventory Summary</h1>
+    {% for store, stats in summary.items() %}
+        <h2>{{ store }}</h2>
+        <table border="1" cellpadding="5">
+            <tr>
+                <th>Status</th>
+                <th>Count</th>
+            </tr>
+            {% for status, count in stats.items() %}
+            <tr>
+                <td>{{ status }}</td>
+                <td>{{ count }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endfor %}
+</body>
+</html>

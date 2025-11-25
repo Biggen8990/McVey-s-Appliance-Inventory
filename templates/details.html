@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Appliance Details</title>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; color: #222; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #eaeaea; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { margin: 5px 0; }
+        h1, h2, h3 { color: #333; }
+    </style>
+</head>
+<body>
+    <ul>
+        <li><b>Store:</b> {{ appliance.store_name }}</li>
+        <li><b>Item Number:</b> {{ appliance.item_number }}</li>
+        <li><b>Brand:</b> {{ appliance.brand }}</li>
+        <li><b>Model:</b> {{ appliance.model }}</li>
+        <li><b>Serial:</b> {{ appliance.serial }}</li>
+        <li><b>Status:</b> {{ appliance.status }}</li>
+        <li><b>Notes:</b> {{ appliance.notes }}</li>
+        <li><b>Last Updated:</b> {{ appliance.last_updated }}</li>
+        {% if appliance.invoice_file %}
+        <li><b>Invoice:</b> <a href="/invoices/{{ appliance.invoice_file }}">View Invoice</a></li>
+        {% endif %}
+    </ul>
+
+    {% if appliance.status_history %}
+    <h3>Status Change History:</h3>
+    <ul>
+        {% for entry in appliance.status_history %}
+        <li>{{ entry.timestamp }} — {{ entry.status }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <a href="/list">Back to List</a>
+</body>
+</html>

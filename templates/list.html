@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Appliance Inventory</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; color: #222; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #eaeaea; }
+        a { color: #1976d2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .flashes { list-style-type: none; padding: 0; }
+        .flashes li { margin: 5px 0; }
+        h1, h2, h3 { color: #333; }
+        .status.in { color: #1976d2; }
+        .status.checked { color: #455a64; }
+        .status.parts-ordered { color: #ff9800; }
+        .status.repaired { color: #388e3c; }
+        .status.loaded { color: #c62828; }
+        .status.delivered { color: #d84315; }
+    </style>
+</head>
+<script>
+window.addEventListener('beforeunload', function (e) {
+        e.preventDefault();
+        e.returnValue = 'Changes may not be saved. Have you downloaded a backup?';
+    });
+</script>
+<body>
+    {% include 'navbar.html' %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul class="flashes">
+        {% for category, message in messages %}
+        <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    <h1>Active Appliances</h1>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Store</th>
+            <th>Item Number</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Serial</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Edit</th>
+            <th>Details</th>
+            <th>Last Updated</th>
+        </tr>
+        {% for app in appliances %}
+        <tr>
+            <td>{{ app.store_name }}</td>
+            <td>{{ app.item_number }}</td>
+            <td>{{ app.brand }}</td>
+            <td>{{ app.model }}</td>
+            <td>{{ app.serial }}</td>
+            <td class="status {{ app.status|lower }}">{{ app.status }}</td>
+            <td>{{ app.notes }}</td>
+            <td>
+                <a href="/edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a>
+            </td>
+            <td>
+                <a href="/details/{{ app.store_name }}/{{ app.item_number }}">Details</a>
+            </td>
+            <td>{{ app.last_updated }}</td>
+            <td>
+        {% if app.invoice_file %}
+            <a href="/invoices/{{ app.invoice_file }}">View Invoice</a>
+        {% endif %}
+    </td>
+    <td>
+        <form method="post" action="/archive/{{ app.store_name }}/{{ app.item_number }}" style="display: inline">
+            <input type="submit" value="Archive">
+        </form>
+    </td>
+</tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
