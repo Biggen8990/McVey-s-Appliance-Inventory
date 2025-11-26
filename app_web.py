@@ -6,9 +6,8 @@ import csv
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
-# Configure SQLite database (local for now, easy cloud switch later)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///appliances.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+import os
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///appliances.db')
 
 db = SQLAlchemy(app)
 
