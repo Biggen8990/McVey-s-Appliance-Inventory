@@ -46,6 +46,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False)  # 'admin' or 'store'
     store = db.Column(db.String(80))  # Only for stores
+    active = db.Column(db.Boolean, default=True)
 
 from datetime import datetime
 
@@ -66,7 +67,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username, active=True).first()
         if user and check_password_hash(user.password_hash, password):
             session['username'] = username
             session['role'] = user.role
@@ -78,6 +79,52 @@ def login():
         else:
             error = "Invalid credentials"
     return render_template('login.html', error=error)
+
+@app.route('/manage-users')
+def manage_users():
+    if session.get('role') != 'admin':
+        return redirect('/')
+    users = User.query.all()
+    return render_template('manage_users.html', users=users)
+
+@app.route('/deactivate-user/<int:user_id>', methods=['POST'])
+def deactivate_user(user_id):
+    if session.get('role') != 'admin':
+        return redirect('/')
+    user = User.query.get(user_id)
+    if user:
+        user.active = False
+        db.session.commit()
+        flash("User deactivated.", "success")
+    return redirect('/manage-users')
+
+@app.route('/activate-user/<int:user_id>', methods=['POST'])
+def activate_user(user_id):
+    if session.get('role') != 'admin':
+        return redirect('/')
+    user = User.query.get(user_id)
+    if user:
+        user.active = True
+        db.session.commit()
+        flash("User activated.", "success")
+    return redirect('/manage-users')
+
+from werkzeug.security import generate_password_hash
+
+@app.route('/change-password/<int:user_id>', methods=['GET', 'POST'])
+def change_password(user_id):
+    # Only allow admin or the user themselves to change password
+    user = User.query.get(user_id)
+    if not user or (session['role'] != 'admin' and session['username'] != user.username):
+        return redirect('/')
+    error = None
+    if request.method == 'POST':
+        new_password = request.form['new_password']
+        user.password_hash = generate_password_hash(new_password, method="pbkdf2:sha256")
+        db.session.commit()
+        flash('Password changed successfully', 'success')
+        return redirect('/manage-users')
+    return render_template('change_password.html', user=user, error=error)
 
 from werkzeug.security import generate_password_hash
 
@@ -400,7 +447,8 @@ def invoice_search():
 def store_portal():
     store = session.get('store')
     store_items = Appliance.query.filter_by(store_name=store, archived=False).all()
-    return render_template('store_portal.html', appliances=store_items, store=store)
+    user = User.query.filter_by(username=session['username']).first()
+    return render_template('store_portal.html', appliances=store_items, store=store, user=user)
 
 @app.route('/invoices/<filename>')
 def uploaded_file(filename):
@@ -429,21 +477,21 @@ def search_appliances():
                 flash('Item Not Found', 'error')
     return render_template('search.html', appliances=results, query=query)
 
-#@app.route('/create-default-admin')
-#def create_default_admin():
-#   from werkzeug.security import generate_password_hash
-#    # Only create if admin doesn't already exist
-#    if User.query.filter_by(username='admin').first():
-#        return "Admin user already exists."
-#    admin = User(
-#        username="admin",
-#        password_hash=generate_password_hash("main", method="pbkdf2:sha256"),
-#        role="admin",
-#        store=None
-#    )
-#    db.session.add(admin)
-#    db.session.commit()
-#    return "Admin user created! You can now log in as admin/main."
+@app.route('/create-default-admin')
+def create_default_admin():
+   from werkzeug.security import generate_password_hash
+    # Only create if admin doesn't already exist
+   if User.query.filter_by(username='admin').first():
+    return "Admin user already exists."
+   admin = User(
+        username="admin",
+        password_hash=generate_password_hash("main", method="pbkdf2:sha256"),
+        role="admin",
+        store=None
+    )
+   db.session.add(admin)
+   db.session.commit()
+   return "Admin user created! You can now log in as admin/main."
 
 with app.app_context():
     db.create_all()
