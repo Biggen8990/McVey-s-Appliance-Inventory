@@ -476,21 +476,21 @@ def search_appliances():
                 flash('Item Not Found', 'error')
     return render_template('search.html', appliances=results, query=query)
 
-@app.route('/create-default-admin')
-def create_default_admin():
-    from werkzeug.security import generate_password_hash
-    if User.query.filter_by(username='admin').first():
-        return "Admin user already exists."
-    admin = User(
-        username="admin",
-        password_hash=generate_password_hash("main", method="pbkdf2:sha256"),
-        role="admin",
-        store=None,
-        active=True  # If you have an `active` field
-    )
-    db.session.add(admin)
-    db.session.commit()
-    return "Admin user created! You can now log in as admin/main."
+#@app.route('/create-default-admin')
+#def create_default_admin():
+#    from werkzeug.security import generate_password_hash
+#    if User.query.filter_by(username='admin').first():
+#        return "Admin user already exists."
+#    admin = User(
+#        username="admin",
+#        password_hash=generate_password_hash("main", method="pbkdf2:sha256"),
+#        role="admin",
+#        store=None,
+#        active=True  # If you have an `active` field
+#    )
+#    db.session.add(admin)
+#    db.session.commit()
+#    return "Admin user created! You can now log in as admin/main."
 
 with app.app_context():
     db.create_all()
