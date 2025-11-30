@@ -42,7 +42,13 @@
             </form>
         </li>
         <li><a href="/export-audit-csv">Export Audit Log to CSV</a></li>
-        <!-- Add more import/export options as needed -->
+       <li>
+        <form action="/import-audit-csv" method="post" enctype="multipart/form-data">
+            Import Audit Log from CSV:
+            <input type="file" name="csvfile" required>
+            <input type="submit" value="Import">
+        </form>
+    </li>
     </ul>
 </body>
 </html>

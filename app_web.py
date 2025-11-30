@@ -29,9 +29,13 @@ class Appliance(db.Model):
 class StatusHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     appliance_id = db.Column(db.Integer, db.ForeignKey('appliance.id'))
+    appliance = db.relationship('Appliance', backref='status_history')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     timestamp = db.Column(db.String(30), nullable=False)
     status = db.Column(db.String(40), nullable=False)
-    appliance = db.relationship('Appliance', backref='status_history')
+    verified_model = db.Column(db.String(80), nullable=True)
+    verified_serial = db.Column(db.String(80), nullable=True)
+    user= db.relationship('User')
 
 class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,7 +47,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # 'admin' or 'store'
+    role = db.Column(db.String(20), nullable=False)  # 'admin', 'store', 'tech'
     store = db.Column(db.String(80))  # Only for stores
     active = db.Column(db.Boolean, default=True)
 
@@ -67,16 +71,19 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username, active=True).first()
+        print(f"User: {user}, Username: {username}, Password OK: {check_password_hash(user.password_hash, password) if user else 'N/A'}")
         if user and check_password_hash(user.password_hash, password):
             session['username'] = username
             session['role'] = user.role
             session['store'] = user.store
+            session['user_id'] = user.id
             if user.role == 'admin':
                 return redirect('/admin-dashboard')
-            else:
+            elif user.role == 'tech':
+                return redirect('/tech-dashboard')
+            elif user.role == 'store':
                 return redirect('/store-portal')
-        else:
-            error = "Invalid credentials"
+        error = "Invalid credentials"
     return render_template('login.html', error=error)
 
 @app.route('/manage-users')
@@ -185,6 +192,31 @@ def export_audit_csv_web():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=audit_log.csv'}
     )
+
+@app.route('/import-audit-csv', methods=['POST'])
+def import_audit_csv_web():
+    if session.get('role') != 'admin':
+        return redirect('/')
+    file = request.files.get('csvfile')
+    if not file:
+        flash('No file selected!', 'error')
+        return redirect('/file-options')
+    import io
+    stream = io.StringIO(file.stream.read().decode('UTF8'), newline=None)
+    reader = csv.DictReader(stream)
+    count = 0
+    for row in reader:
+        if row.get('timestamp') and row.get('action') and row.get('details'):
+            entry = AuditLog(
+                timestamp=row['timestamp'],
+                action=row['action'],
+                details=row['details']
+            )
+            db.session.add(entry)
+            count += 1
+    db.session.commit()
+    flash(f'Imported {count} audit log entries.', 'success')
+    return redirect('/file-options')
 
 @app.route('/import-csv', methods=['POST'])
 def import_csv_web():
@@ -441,6 +473,116 @@ def invoice_search():
         else:
             results = Appliance.query.filter(Appliance.invoice_file != None).all()
     return render_template('invoice_search.html', appliances=results, query=query)
+
+@app.route('/tech-edit/<store_name>/<item_number>', methods=['GET', 'POST'])
+def tech_edit_appliance(store_name, item_number):
+    app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
+    if not app_rec:
+        return "Appliance not found", 404
+
+    # Only allow techs to access (and optionally their assigned store)
+    if session['role'] != 'tech':
+        return redirect('/')
+
+    # Check if any StatusHistory exists for this appliance where status != "In"
+    first_change = not StatusHistory.query.filter(
+        StatusHistory.appliance_id == app_rec.id,
+        StatusHistory.status != 'In'
+    ).first()
+
+    if request.method == 'POST':
+        new_status = request.form['status']
+        new_notes = request.form['notes']
+
+        if first_change:
+            # Require verified_model and verified_serial fields
+            verified_model = request.form['verified_model']
+            verified_serial = request.form['verified_serial']
+            if not verified_model or not verified_serial:
+                flash('Model and Serial are required for the first status change.', 'error')
+                return render_template(
+                    'tech_edit.html',
+                    appliance=app_rec,
+                    first_change=first_change
+                )
+        else:
+            verified_model = None
+            verified_serial = None
+
+        # Log the status change
+        new_history = StatusHistory(
+            appliance_id=app_rec.id,
+            user_id=session['user_id'],  # You should set this when logging in
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            status=new_status,
+            verified_model=verified_model,
+            verified_serial=verified_serial
+        )
+        db.session.add(new_history)
+
+        app_rec.status = new_status
+        app_rec.notes = new_notes
+        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        db.session.commit()
+        flash("Status updated.", "success")
+        return redirect('/store-portal')
+
+    return render_template(
+        'tech_edit.html',
+        appliance=app_rec,
+        first_change=first_change,
+        status_options=STATUS_OPTIONS
+        )
+
+@app.route('/tech-dashboard', methods=['GET', 'POST'])
+def tech_dashboard():
+    if session.get('role') != 'tech':
+        return redirect('/')
+    # Always get all active appliances first
+    appliances = Appliance.query.filter_by(archived=False).all()
+    grouped = {}
+    # Group by store name
+    for app_rec in appliances:
+        store = app_rec.store_name
+        grouped.setdefault(store, []).append(app_rec)
+    return render_template('tech_dashboard.html', grouped=grouped)
+
+@app.route('/tech-appliance-details/<store_name>/<item_number>')
+def tech_appliance_details(store_name, item_number):
+    if session.get('role') != 'tech':
+        return redirect('/')
+    app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
+    if not app_rec:
+        return "Appliance not found", 404
+    return render_template('tech_appliance_details.html', appliance=app_rec)
+
+@app.route('/tech-lookup', methods=['POST'])
+def tech_lookup():
+    if session.get('role') != 'tech':
+        return redirect('/')
+    store = request.form.get('store_name', '').strip()
+    item = request.form.get('item_number', '').strip()
+    query = Appliance.query.filter_by(archived=False)
+    results = []
+
+    if store and item:
+        results = query.filter_by(store_name=store, item_number=item).all()
+    elif store:
+        results = query.filter_by(store_name=store).all()
+    elif item:
+        results = query.filter_by(item_number=item).all()
+    else:
+        results = query.all()  # Show all active if nothing entered
+
+    if not results:
+        flash("No items found for that search.", "error")
+        return redirect('/tech-dashboard')
+    # If exactly one result, show details directly:
+    if len(results) == 1:
+        return redirect(url_for('tech_appliance_details', store_name=results[0].store_name, item_number=results[0].item_number))
+    # If multiple, show a result listing page:
+    return render_template('tech_lookup_results.html', appliances=results)
 
 @app.route('/store-portal')
 def store_portal():

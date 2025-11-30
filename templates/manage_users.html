@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Users</title>
+</head>
+<body>
+{% include 'navbar.html' %}
+<h1>Manage Users</h1>
+<table border="1">
+    <tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Store</th>
+        <th>Active</th>
+        <th>Actions</th>
+    </tr>
+    {% for u in users %}
+    <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.role }}</td>
+        <td>{{ u.store }}</td>
+        <td>{% if u.active %}Yes{% else %}No{% endif %}</td>
+        <td>
+            {% if u.active %}
+                <form method="post" action="/deactivate-user/{{ u.id }}" style="display:inline;">
+                    <input type="submit" value="Deactivate">
+                </form>
+            {% else %}
+                <form method="post" action="/activate-user/{{ u.id }}" style="display:inline;">
+                    <input type="submit" value="Activate">
+                </form>
+            {% endif %}
+            <a href="/change-password/{{ u.id }}">Change Password</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

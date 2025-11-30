@@ -52,6 +52,34 @@
     </ul>
     {% endif %}
 
+    <td>{{ appliance.model }}</td>
+<td>{{ appliance.serial }}</td>
+<td>
+    {% for h in appliance.status_history %}
+        {% if h.verified_model or h.verified_serial %}
+        Tech: {{ h.user.username }}<br>
+        Model Verified: {{ h.verified_model }}<br>
+        Serial Verified: {{ h.verified_serial }}<br>
+        Timestamp: {{ h.timestamp }}
+        {% endif %}
+    {% endfor %}
+</td>
+{% if appliance.status_history %}
+<h3>Status Change History</h3>
+<ul>
+    {% for entry in appliance.status_history %}
+    <li>
+        {{ entry.timestamp }} — {{ entry.status }} by
+        {{ entry.user.username if entry.user else "Unknown" }}
+        {% if entry.verified_model or entry.verified_serial %}
+            [Model: {{ entry.verified_model }}, Serial: {{ entry.verified_serial }}]
+        {% endif %}
+        {% if entry.notes %} [Notes: {{ entry.notes }}] {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
     <a href="/list">Back to List</a>
 </body>
 </html>

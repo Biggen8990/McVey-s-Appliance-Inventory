@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lookup Results</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h2>Item Lookup Results</h2>
+    <table border="1">
+        <tr>
+            <th>Store</th>
+            <th>Item Number</th>
+            <th>Status</th>
+            <th>History</th>
+            <th>Edit</th>
+        </tr>
+        {% for app in appliances %}
+        <tr>
+            <td>{{ app.store_name }}</td>
+            <td>{{ app.item_number }}</td>
+            <td>{{ app.status }}</td>
+            <td>
+                <a href="/tech-appliance-details/{{ app.store_name }}/{{ app.item_number }}">View Details</a>
+            </td>
+            <td>
+                <a href="/tech-edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/tech-dashboard">Back to Dashboard</a>
+</body>
+</html>

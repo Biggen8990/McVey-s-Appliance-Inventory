@@ -1,0 +1,14 @@
+<h3>Status Change History</h3>
+{% include 'navbar.html' %}
+<ul>
+{% for entry in appliance.status_history %}
+    <li>
+        {{ entry.timestamp }} — {{ entry.status }} by 
+        {{ entry.user.username if entry.user else "Unknown" }}
+        {% if entry.verified_model or entry.verified_serial %}
+            [Verified Model: {{ entry.verified_model }}, Serial: {{ entry.verified_serial }}]
+        {% endif %}
+        {% if entry.notes %} [Notes: {{ entry.notes }}] {% endif %}
+    </li>
+{% endfor %}
+</ul>

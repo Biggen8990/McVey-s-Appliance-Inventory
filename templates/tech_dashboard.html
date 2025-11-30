@@ -1,0 +1,43 @@
+{% include 'navbar.html' %}
+<h1>Tech Dashboard: Active Appliance Inventory</h1>
+<h2>Quick Item Lookup</h2>
+    <form method="post" action="/tech-lookup">
+        <label>Store Name:</label>
+        <input name="store_name">
+        <label>Item Number:</label>
+        <input name="item_number">
+        <input type="submit" value="Look Up">
+    </form>
+    <br>
+{% for store, apps in grouped.items() %}
+    <h2>{{ store }}</h2>
+    <table border="1">
+        <tr>
+            <th>Item Number</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Serial</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Details/History</th>
+            <th>Edit</th>
+        </tr>
+        {% for app in apps %}
+        <tr>
+            <td>{{ app.item_number }}</td>
+            <td>{{ app.brand }}</td>
+            <td>{{ app.model }}</td>
+            <td>{{ app.serial }}</td>
+            <td>{{ app.status }}</td>
+            <td>{{ app.notes }}</td>
+            <td>
+                <a href="/tech-appliance-details/{{ app.store_name }}/{{ app.item_number }}">View Details</a>
+            </td>
+            <td>
+                <a href="/tech-edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+{% endfor %}

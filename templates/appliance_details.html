@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Appliance Details</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h2>Details for {{ appliance.store_name }} / {{ appliance.item_number }}</h2>
+    <ul>
+        <li>Status: {{ appliance.status }}</li>
+        <li>Notes: {{ appliance.notes }}</li>
+        <li>Last Updated: {{ appliance.last_updated }}</li>
+    </ul>
+    <h3>Status Change History</h3>
+    <ul>
+    {% for entry in appliance.status_history %}
+        <li>{{ entry.timestamp }} — {{ entry.status }} by {{ entry.user.username if entry.user else "Unknown" }}
+            {% if entry.verified_model or entry.verified_serial %}
+                [Model: {{ entry.verified_model }}, Serial: {{ entry.verified_serial }}]
+            {% endif %}
+            {% if entry.notes %} [Notes: {{ entry.notes }}] {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

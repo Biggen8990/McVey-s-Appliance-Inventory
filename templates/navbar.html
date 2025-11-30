@@ -9,11 +9,16 @@
         <a href="/search">Search</a> |
         <a href="/invoice-search">Find Invoices</a> |
         <a href="/register">Add User</a> |
+        <a href="/manage-users">Manage Users</a> |
         <a href="/logout">Logout</a>
     {% else %}
         {% if session['role'] == 'store' %}
             <a href="/store-portal">My Items</a> |
-            <a href="/logout">Logout</a>
+            <a href="/change-password/{{ user.id }}">Change Password</a> |
+            <a href="/logout">Logout</a>    
+    {% elif session['role'] == 'tech' %}
+        <a href="/tech-dashboard">Tech Dashboard</a> |
+        <a href="/logout">Logout</a>
         {% endif %}
     {% endif %}
 </div>

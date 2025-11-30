@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Appliance (Tech)</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h2>Edit Status for {{ appliance.store_name }}/{{ appliance.item_number }}</h2>
+    <form method="post">
+        Status:
+        <select name="status">
+            {% for stat in status_options %}
+                <option value="{{ stat }}" {% if appliance.status == stat %}selected{% endif %}>{{ stat }}</option>
+            {% endfor %}
+        </select><br>
+        Notes: <input name="notes" value="{{ appliance.notes|default('') }}"><br>
+        {% if first_change %}
+            <label>Model (required):</label>
+            <input name="verified_model" required><br>
+            <label>Serial (required):</label>
+            <input name="verified_serial" required><br>
+        {% else %}
+            <div><b>Original Model:</b> {{ appliance.model }}, <b>Original Serial:</b> {{ appliance.serial }}</div>
+        {% endif %}
+        <input type="submit" value="Update Status">
+    </form>
+</body>
+</html>
