@@ -13,6 +13,12 @@ db = SQLAlchemy(app)
 
 from datetime import datetime
 
+@app.route("/init-db")
+def init_db():
+    with app.app_context():
+        db.create_all()
+    return "Database initialized!"
+
 class Appliance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     store_name = db.Column(db.String(80), nullable=False)
