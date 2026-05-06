@@ -31,6 +31,7 @@ class Appliance(db.Model):
     archived = db.Column(db.Boolean, default=False)
     invoice_file = db.Column(db.String(255))
     last_updated = db.Column(db.String(30), nullable=False, default=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    synced = db.Column(db.Boolean, default=False)
 
 class StatusHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -325,12 +326,15 @@ def admin_dashboard():
     if session.get('role') != 'admin':
         return redirect('/')
     summary = {}
-    for app_rec in Appliance.query.filter_by(archived=False).all():
+    unsynced_count = Appliance.query.filter_by(synced=False).count()
+    appliances = Appliance.query.filter_by(archived=False).all()
+    for app_rec in appliances:
         store = app_rec.store_name
         status = app_rec.status
         summary.setdefault(store, {})
         summary[store][status] = summary[store].get(status, 0) + 1
-    return render_template('admin_dashboard.html', summary=summary)
+    return render_template('admin_dashboard.html', summary=summary, appliances=appliances, unsynced_count=unsynced_count )
+
 
 UPLOAD_FOLDER = 'invoices'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -352,6 +356,7 @@ def add_appliance_web():
             archived=False,
             invoice_file=None
         )
+        new_app.synced = False
         db.session.add(new_app)
         db.session.commit()
         log_action('add', f'Added {new_app.store_name}/{new_app.item_number}')
