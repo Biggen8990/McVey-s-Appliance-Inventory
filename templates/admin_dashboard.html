@@ -33,12 +33,17 @@ window.addEventListener('beforeunload', function (e) {
         font-weight: bold;
         border: 2px solid darkred;
         margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     ">
-        🚩 ITEMS NOT SYNCED ({{ unsynced_count }})
+        <span>🚩 ITEMS NOT SYNCED ({{ unsynced_count }})</span> 
     </div>
 
-<form method="POST" action="/sync-all" style="margin-bottom: 15px;">
-    <button type="submit" style="
+<form method="POST" action="/sync-all"></form>
+    <button type="submit" 
+        onclick="return confirm('Sync all unsynced items?');"
+        style= "margin-bottom: 15px;"
         background-color: darkred;
         color: white;
         padding: 8px 12px;
@@ -46,7 +51,7 @@ window.addEventListener('beforeunload', function (e) {
         cursor: pointer;
         font-weight: bold;
     ">
-        Sync All
+        Sync All ({{ unsynced_count }})
     </button>
 </form>
 
