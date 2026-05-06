@@ -36,8 +36,21 @@ window.addEventListener('beforeunload', function (e) {
     ">
         🚩 ITEMS NOT SYNCED ({{ unsynced_count }})
     </div>
+
+<form method="POST" action="/sync-all" style="margin-bottom: 15px;">
+    <button type="submit" style="
+        background-color: darkred;
+        color: white;
+        padding: 8px 12px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+    ">
+        Sync All
+    </button>
+</form>
+
 {% endif %}
-<p>DEBUG unsynced_count: {{ unsynced_count }}</p>
     {% include 'navbar.html' %}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}

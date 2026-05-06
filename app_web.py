@@ -60,6 +60,21 @@ class User(db.Model):
 
 from datetime import datetime
 
+@app.route('/sync-all', methods=['POST'])
+def sync_all():
+    if session.get('role') != 'admin':
+        return redirect('/')
+
+    unsynced_items = Appliance.query.filter_by(synced=False).all()
+
+    for item in unsynced_items:
+        item.synced = True
+
+    db.session.commit()
+
+    flash(f'{len(unsynced_items)} items synced successfully.', 'success')
+    return redirect('/admin-dashboard')
+
 def log_action(action, details):
     entry = AuditLog(
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
