@@ -102,6 +102,18 @@ def add_appliance():
     })
     print("Appliance added!\n")
 
+def add_appliance_to_db(appliance_dict, appliance_db):
+    """
+    Add an appliance to appliance_db if not a duplicate.
+    Returns True if success, False if duplicate.
+    """
+    for app in appliance_db:
+        if (app['store_name'].lower() == appliance_dict['store_name'].lower() and
+            app['item_number'] == appliance_dict['item_number']):
+            return False  # Duplicate
+    appliance_db.append(appliance_dict)
+    return True
+
 def list_appliances():
     """List all appliances."""
     if not appliances:
@@ -129,30 +141,44 @@ def load_from_file(filename="appliance_inventory.json"):
         print("No saved file found. Starting empty.\n")
 
 def edit_appliance():
-    """Edit an appliance by store name and item number."""
     item_number = input("Enter Store Item Number to edit: ")
     store_name = input("Enter Store Name: ").strip().lower()
-    for app in appliances:
-        if app['item_number'] == item_number and app['store_name'].lower() == store_name:
-            print(f"Current info: {app}")
-            print("Leave blank to keep current value.")
-            app['store_name'] = input(f"Store Name [{app['store_name']}]: ") or app['store_name']
-            app['brand'] = input(f"Brand [{app['brand']}]: ") or app['brand']
-            app['model'] = input(f"Model [{app['model']}]: ") or app['model']
-            app['serial'] = input(f"Serial [{app['serial']}]: ") or app['serial']
-            app['item_number'] = input(f"Item number [{app['item_number']}]: ") or app['item_number']
-            app['notes'] = input(f"Notes/Comments [{app.get('notes', '')}]: ") or app.get('notes', '')
-            print("Current Status:", app['status'])
-            if input("Change status? (y/n): ").strip().lower() == 'y':
-                new_status = choose_status()
-                app['status'] = new_status
-                if 'history' not in app:
-                    app['history'] = []
-                app['history'].append((datetime.now().strftime("%Y-%m-%d %H:%M:%S"), new_status))
-            print("Appliance updated!\n")
-            log_action('edit', f"{item_number} at {app['store_name']}")
-            return
-    print("Appliance not found.\n")
+
+    # Collect updated fields from the user...
+    updated_fields = {}
+    if input("Change brand? (y/n): ").strip().lower() == 'y':
+        updated_fields["brand"] = input("New brand: ")
+    if input("Change model? (y/n): ").strip().lower() == 'y':
+        updated_fields["model"] = input("New model: ")
+    if input("Change serial? (y/n): ").strip().lower() == 'y':
+        updated_fields["serial"] = input("New serial: ")
+    if input("Change notes? (y/n): ").strip().lower() == 'y':
+        updated_fields["notes"] = input("New notes: ")
+    if input("Change status? (y/n): ").strip().lower() == 'y':
+        updated_fields["status"] = input("New status: ")
+
+    # Now update using core, testable function
+    result = edit_appliance_in_db(appliances, store_name, item_number, updated_fields)
+    if result:
+        print("Appliance updated!\n")
+    else:
+        print("Appliance not found.\n")
+
+def edit_appliance_in_db(appliance_db, store_name, item_number, updated_fields):
+    """
+    Edit an appliance by store and item number in appliance_db.
+
+    :param appliance_db: List of appliance dicts (your 'database')
+    :param store_name: Store name to look for (string)
+    :param item_number: Item number to look for (string)
+    :param updated_fields: Dict of fields to update (e.g., {'notes': 'Checked', 'status': 'Checked'})
+    :return: True if updated, False if not found
+    """
+    for app in appliance_db:
+        if app['item_number'] == item_number and app['store_name'].lower() == store_name.lower():
+            app.update(updated_fields)
+            return True
+    return False
 
 def advanced_search():
     """Filter appliances by store, status, or brand (non-archived only)."""
@@ -188,7 +214,28 @@ def advanced_search():
     for app in results:
         print(f"{app['store_name']} | {app['item_number']} | {app['brand']} | {app['model']} | {app['serial']} | {app['status']} | {app.get('notes', '')}")
     print()
-   
+
+def search_appliance_in_db(appliance_db, store_name=None, item_number=None):
+    """
+    Returns a list of appliances that match the provided store_name and/or item_number.
+    If both parameters are None, returns all non-archived appliances.
+    """
+    results = []
+    for app in appliance_db:
+        if app.get('archived'):
+            continue
+        if store_name and item_number:
+            if app['store_name'].lower() == store_name.lower() and app['item_number'] == item_number:
+                results.append(app)
+        elif store_name:
+            if app['store_name'].lower() == store_name.lower():
+                results.append(app)
+        elif item_number:
+            if app['item_number'] == item_number:
+                results.append(app)
+        else:
+            results.append(app)
+    return results
 
 def archive_appliance():
     """Archive an appliance by store name and item number."""
@@ -201,6 +248,17 @@ def archive_appliance():
             print("Appliance archived! (It is now hidden from regular lists and reports)\n")
             return
     print("Appliance not found.\n")
+
+def archive_appliance_in_db(appliance_db, store_name, item_number):
+    """
+    Archives the appliance by setting 'archived' to True.
+    Returns True if successful, False if not found.
+    """
+    for app in appliance_db:
+        if app['store_name'].lower() == store_name.lower() and app['item_number'] == item_number:
+            app['archived'] = True
+            return True
+    return False
 
 def view_archived():
     """Show all archived appliances."""
@@ -486,4 +544,3 @@ def menu():
 
 if __name__ == "__main__":
     menu()
-     

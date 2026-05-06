@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 import os
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///appliances.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///appliances.db'
 
 db = SQLAlchemy(app)
 
@@ -634,8 +634,9 @@ def search_appliances():
 #    db.session.commit()
 #    return "Admin user created! You can now log in as admin/main."
 
-with app.app_context():
-    db.create_all()
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True)
