@@ -8,10 +8,7 @@ app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 import os
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    'DATABASE_URL',
-    'sqlite:///appliances.db'
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['DEMO_MODE'] = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
 
 db = SQLAlchemy(app)
