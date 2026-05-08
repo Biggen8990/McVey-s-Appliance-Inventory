@@ -41,9 +41,9 @@ class Appliance(db.Model):
     invoice_file = db.Column(db.String(255))
     last_updated = db.Column(db.String(30), nullable=False, default=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     synced = db.Column(db.Boolean, default=False)
-    last_updated = db.Column(timezone.utc),
+    last_updated = db.Column(db.Datetime, default=lambda: datetime.now(timezone.utc),
     onupdate=lambda: datetime.now(timezone.utc)
-
+    )
 class StatusHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     appliance_id = db.Column(db.Integer, db.ForeignKey('appliance.id'))

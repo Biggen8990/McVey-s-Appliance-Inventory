@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 gunicorn
 Werkzeug
 psycopg2-binary
+requests
