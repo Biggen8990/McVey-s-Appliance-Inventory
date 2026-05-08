@@ -703,6 +703,28 @@ def create_default_admin():
     db.session.commit()
     return "Admin user created! You can now log in as admin/main."
 
+@app.route('/force-db-fix')
+def force_db_fix():
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text(
+                "ALTER TABLE appliance ADD COLUMN synced BOOLEAN DEFAULT FALSE"
+            ))
+    except Exception as e:
+        print(e)
+
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text(
+                "ALTER TABLE appliance ADD COLUMN last_updated TIMESTAMP"
+            ))
+    except Exception as e:
+        print(e)
+
+    db.session.commit()
+
+    return "Database fix attempted."
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
