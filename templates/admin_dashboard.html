@@ -24,36 +24,7 @@ window.addEventListener('beforeunload', function (e) {
         e.returnValue = 'Changes may not be saved. Have you downloaded a backup?';
     });
 </script>
-<body>
-    {% if unsynced_count > 0 %}
-    <div style="
-        background-color: white;
-        color: darkred;
-        padding: 10px;
-        font-weight: bold;
-        border: 2px solid darkred;
-        margin-bottom: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    ">
-        <span>🚩 ITEMS NOT SYNCED ({{ unsynced_count }})</span> 
-    </div>
 
-<form method="POST" action="/sync-all"></form>
-    <button type="submit" 
-        onclick="return confirm('Sync all unsynced items?');"
-        style= "margin-bottom: 15px;"
-        background-color: darkred;
-        color: white;
-        padding: 8px 12px;
-        border: none;
-        cursor: pointer;
-        font-weight: bold;
-    ">
-        Sync All ({{ unsynced_count }})
-    </button>
-</form>
 
 {% endif %}
     {% include 'navbar.html' %}

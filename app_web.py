@@ -2,12 +2,17 @@ from flask import Flask, render_template, request, redirect, session, url_for, s
 from flask_sqlalchemy import SQLAlchemy
 import os
 import csv
+import requests
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 import os
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///appliances.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL',
+    'sqlite:///appliances.db'
+)
+app.config['DEMO_MODE'] = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
 
 db = SQLAlchemy(app)
 
@@ -66,19 +71,51 @@ class User(db.Model):
 
 from datetime import datetime
 
-@app.route('/sync-all', methods=['POST'])
+@app.route('/sync-all')
 def sync_all():
-    if session.get('role') != 'admin':
-        return redirect('/')
 
     unsynced_items = Appliance.query.filter_by(synced=False).all()
 
+    payload = []
+
     for item in unsynced_items:
-        item.synced = True
+        payload.append({
+            "id": item.id,
+            "store_name": item.store_name,
+            "item_number": item.item_number,
+            "brand": item.brand,
+            "model": item.model,
+            "serial": item.serial,
+            "status": item.status,
+            "notes": item.notes
+        })
 
-    db.session.commit()
+    if not payload:
+        flash("No items need syncing.", "success")
+        return redirect('/admin-dashboard')
 
-    flash(f'{len(unsynced_items)} items synced successfully.', 'success')
+    try:
+        response = requests.post(
+            'https://mcvey-s-appliance-inventory.onrender.com/api/sync',
+            json=payload,
+            timeout=15
+        )
+
+        if response.status_code == 200:
+
+            for item in unsynced_items:
+                item.synced = True
+
+            db.session.commit()
+
+            flash("All items synced successfully.", "success")
+
+        else:
+            flash("Sync failed.", "error")
+
+    except Exception as e:
+        flash(f"Sync error: {str(e)}", "error")
+
     return redirect('/admin-dashboard')
 
 def log_action(action, details):
