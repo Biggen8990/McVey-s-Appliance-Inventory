@@ -19,6 +19,10 @@ def init_db():
         db.create_all()
     return "Database initialized!"
 
+@app.context_processor
+def inject_demo_mode():
+    return dict(demo_mode=app.config['DEMO_MODE'])
+
 class Appliance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     store_name = db.Column(db.String(80), nullable=False)
@@ -336,7 +340,7 @@ def logout():
     session.clear()
     return redirect('/')
 
-STATUS_OPTIONS = ["In", "Checked", "Parts Ordered", "Repaired", "Loaded", "Delivered"]
+STATUS_OPTIONS = ["Loaded/Inbound", "In", "Checked", "Parts Ordered", "Repaired", "Loaded/Out Bound", "Delivered"]
 
 @app.route('/admin-dashboard')
 def admin_dashboard():
