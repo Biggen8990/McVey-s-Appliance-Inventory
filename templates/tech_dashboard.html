@@ -37,6 +37,7 @@
                 <a href="/tech-edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a>
             </td>
         </tr>
+        <button onclick="syncAll()">Sync All</button>
         {% endfor %}
     </table>
     <script>
@@ -56,13 +57,14 @@ async function syncAll() {
         },
         body: JSON.stringify(unsynced)
     });
+    const result = await response.json();
 
-    if (response.ok) {
+    if (result.success) {
         localStorage.removeItem('unsyncedChanges');
         alert('All changes synced successfully.');
         location.reload();
     } else {
-        alert('Sync failed.');
+        alert('Sync failed.' + result.message);
     }
 }
 </script>

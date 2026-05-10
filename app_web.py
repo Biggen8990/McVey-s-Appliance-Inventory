@@ -19,22 +19,6 @@ db = SQLAlchemy(app)
 
 from datetime import datetime, timezone
 
-@app.route('/sync-all', methods=['POST'])
-def sync_all():
-    data = request.get_json()
-
-    for item in data:
-        appliance = Appliance.query.get(item['appliance_id'])
-
-        if appliance:
-            appliance.status = item['status']
-            appliance.notes = item['notes']
-            appliance.synced = True
-
-    db.session.commit()
-
-    return {'success': True}
-
 @app.route("/init-db")
 def init_db():
     with app.app_context():
@@ -88,53 +72,39 @@ class User(db.Model):
 
 from datetime import datetime
 
-@app.route('/sync-all')
+@app.route('/sync-all', methods=['POST'])
 def sync_all():
 
-    unsynced_items = Appliance.query.filter_by(synced=False).all()
+    data = request.get_json()
 
-    payload = []
-
-    for item in unsynced_items:
-        payload.append({
-            "id": item.id,
-            "store_name": item.store_name,
-            "item_number": item.item_number,
-            "brand": item.brand,
-            "model": item.model,
-            "serial": item.serial,
-            "status": item.status,
-            "notes": item.notes
-        })
-
-    if not payload:
-        flash("No items need syncing.", "success")
-        return redirect('/admin-dashboard')
+    if not data:
+        return {'success': False, 'message': 'No data received'}
 
     try:
-        response = requests.post(
-            'https://mcvey-s-appliance-inventory.onrender.com/api/sync',
-            json=payload,
-            timeout=15
-        )
 
-        if response.status_code == 200:
+        for item in data:
 
-            for item in unsynced_items:
-                item.synced = True
+            appliance = Appliance.query.get(item['appliance_id'])
 
-            db.session.commit()
+            if appliance:
 
-            flash("All items synced successfully.", "success")
+                appliance.status = item['status']
+                appliance.notes = item['notes']
+                appliance.synced = True
 
-        else:
-            flash("Sync failed.", "error")
+        db.session.commit()
+
+        return {'success': True}
 
     except Exception as e:
-        flash(f"Sync error: {str(e)}", "error")
 
-    return redirect('/admin-dashboard')
+        db.session.rollback()
 
+        return {
+            'success': False,
+            'message': str(e)
+        }, 500
+    
 def log_action(action, details):
     entry = AuditLog(
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
