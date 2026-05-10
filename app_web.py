@@ -105,6 +105,15 @@ def sync_all():
             'message': str(e)
         }, 500
     
+@app.context_processor
+def inject_unsynced_count():
+    try:
+        unsynced_count = Appliance.query.filter_by(synced=False).count()
+    except:
+        unsynced_count = 0
+
+    return dict(unsynced_count=unsynced_count)
+    
 def log_action(action, details):
     entry = AuditLog(
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -378,7 +387,7 @@ def admin_dashboard():
         status = app_rec.status
         summary.setdefault(store, {})
         summary[store][status] = summary[store].get(status, 0) + 1
-    return render_template('admin_dashboard.html', summary=summary, appliances=appliances, unsynced_count=unsynced_count )
+    return render_template('admin_dashboard.html', summary=summary, appliances=appliances)
 
 
 UPLOAD_FOLDER = 'invoices'
