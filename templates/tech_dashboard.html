@@ -1,15 +1,16 @@
 {% include 'navbar.html' %}
 <h1>Tech Dashboard: Active Appliance Inventory</h1>
 <h2>Quick Item Lookup</h2>
-<button onclick="syncAll()">Sync All</button>
-    <form method="post" action="/tech-lookup">
-        <label>Store Name:</label>
-        <input name="store_name">
-        <label>Item Number:</label>
-        <input name="item_number">
-        <input type="submit" value="Look Up">
-    </form>
-    <br>
+
+<form method="post" action="/tech-lookup">
+    <label>Store Name:</label>
+    <input name="store_name">
+    <label>Item Number:</label>
+    <input name="item_number">
+    <input type="submit" value="Look Up">
+</form>
+<br>
+
 {% for store, apps in grouped.items() %}
     <h2>{{ store }}</h2>
     <table border="1">
@@ -31,43 +32,9 @@
             <td>{{ app.serial }}</td>
             <td>{{ app.status }}</td>
             <td>{{ app.notes }}</td>
-            <td>
-                <a href="/tech-appliance-details/{{ app.store_name }}/{{ app.item_number }}">View Details</a>
-            </td>
-            <td>
-                <a href="/tech-edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a>
-            </td>
+            <td><a href="/tech-appliance-details/{{ app.store_name }}/{{ app.item_number }}">View Details</a></td>
+            <td><a href="/tech-edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a></td>
         </tr>
-        
         {% endfor %}
     </table>
-    <script>
-async function syncAll() {
-
-    const unsynced = JSON.parse(localStorage.getItem('unsyncedChanges') || '[]');
-
-    if (unsynced.length === 0) {
-        alert('Nothing to sync.');
-        return;
-    }
-
-    const response = await fetch('/sync-all', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(unsynced)
-    });
-    const result = await response.json();
-
-    if (result.success) {
-        localStorage.removeItem('unsyncedChanges');
-        alert('All changes synced successfully.');
-        location.reload();
-    } else {
-        alert('Sync failed.' + result.message);
-    }
-}
-</script>
-    
 {% endfor %}

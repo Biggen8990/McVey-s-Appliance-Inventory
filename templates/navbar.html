@@ -1,6 +1,6 @@
 <div style="background: #eaeaea; padding: 10px;">
     {% if session['role'] == 'admin' %}
-        <a href="/admin-dashboard">Dashboard</a>
+        <a href="/admin-dashboard">Dashboard</a> |
         <a href="/list">Appliance List</a> |
         <a href="/add">Add Appliance</a> |
         <a href="/archived">View Archived</a> |
@@ -21,29 +21,23 @@
     {% endif %}
 </div>
 
-<body>
-    {% if unsynced_count > 0 %}
-    <button onclick="syncAll()">Sync All</button>
-    <div style="
-        background-color: white;
-        color: darkred;
-        padding: 10px;
-        font-weight: bold;
-        border: 2px solid darkred;
-        margin-bottom: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    ">
-        <span>🚩 ITEMS NOT SYNCED ({{ unsynced_count }})</span>
-    </div>
-
-    {% if not demo_mode %}
-    <form method="POST" action="/sync-all">
+{% if session['role'] == 'tech' and unsynced_count > 0 %}
+<div style="
+    background-color: white;
+    color: darkred;
+    padding: 10px;
+    font-weight: bold;
+    border: 2px solid darkred;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+">
+    <span>🚩 ITEMS NOT SYNCED ({{ unsynced_count }})</span>
+    <form method="POST" action="/sync-all" style="margin: 0;">
         <button type="submit"
             onclick="return confirm('Sync all unsynced items?');"
             style="
-                margin-bottom: 15px;
                 background-color: darkred;
                 color: white;
                 padding: 8px 12px;
@@ -55,6 +49,5 @@
             Sync All ({{ unsynced_count }})
         </button>
     </form>
-    {% endif %}
-    <br>
-    {% endif %}
+</div>
+{% endif %}
