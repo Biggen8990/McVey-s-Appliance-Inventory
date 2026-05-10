@@ -24,5 +24,30 @@
         {% endif %}
         <input type="submit" value="Update Status">
     </form>
+    <script>
+document.querySelector('form').addEventListener('submit', async function(e) {
+
+    if (!navigator.onLine) {
+        e.preventDefault();
+
+        const formData = {
+            appliance_id: "{{ appliance.id }}",
+            status: document.querySelector('[name="status"]').value,
+            notes: document.querySelector('[name="notes"]').value,
+            timestamp: new Date().toISOString()
+        };
+
+        let unsynced = JSON.parse(localStorage.getItem('unsyncedChanges') || '[]');
+
+        unsynced.push(formData);
+
+        localStorage.setItem('unsyncedChanges', JSON.stringify(unsynced));
+
+        alert('No internet detected. Changes saved locally and will need syncing.');
+
+        window.location.href = "/tech-dashboard";
+    }
+});
+</script>
 </body>
 </html>

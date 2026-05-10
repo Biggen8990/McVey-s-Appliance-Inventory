@@ -19,6 +19,22 @@ db = SQLAlchemy(app)
 
 from datetime import datetime, timezone
 
+@app.route('/sync-all', methods=['POST'])
+def sync_all():
+    data = request.get_json()
+
+    for item in data:
+        appliance = Appliance.query.get(item['appliance_id'])
+
+        if appliance:
+            appliance.status = item['status']
+            appliance.notes = item['notes']
+            appliance.synced = True
+
+    db.session.commit()
+
+    return {'success': True}
+
 @app.route("/init-db")
 def init_db():
     with app.app_context():

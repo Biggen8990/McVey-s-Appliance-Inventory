@@ -39,5 +39,32 @@
         </tr>
         {% endfor %}
     </table>
+    <script>
+async function syncAll() {
+
+    const unsynced = JSON.parse(localStorage.getItem('unsyncedChanges') || '[]');
+
+    if (unsynced.length === 0) {
+        alert('Nothing to sync.');
+        return;
+    }
+
+    const response = await fetch('/sync-all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(unsynced)
+    });
+
+    if (response.ok) {
+        localStorage.removeItem('unsyncedChanges');
+        alert('All changes synced successfully.');
+        location.reload();
+    } else {
+        alert('Sync failed.');
+    }
+}
+</script>
     
 {% endfor %}
