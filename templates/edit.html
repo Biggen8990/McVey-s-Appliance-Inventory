@@ -16,19 +16,25 @@
         .flashes { list-style-type: none; padding: 0; }
         .flashes li { margin: 5px 0; }
         h1, h2, h3 { color: #333; }
+        .invoice-section { margin: 8px 0; }
+        .invoice-status { font-size: 0.9em; margin-bottom: 4px; }
+        .invoice-status.on-file { color: green; font-weight: bold; }
+        .invoice-status.none { color: #888; }
     </style>
 </head>
 <body>
     {% include 'navbar.html' %}
+
     {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <ul class="flashes">
-        {% for category, message in messages %}
-        <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+        {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     {% endwith %}
+
     <h1>Edit Appliance</h1>
     <form method="post" enctype="multipart/form-data">
         Store Name: <input name="store_name" value="{{ appliance.store_name }}"><br>
@@ -37,33 +43,31 @@
         Model: <input name="model" value="{{ appliance.model }}"><br>
         Serial: <input name="serial" value="{{ appliance.serial }}"><br>
         Status:
-        <select name="status" id="status-select" onchange="toggleInvoiceField()">
+        <select name="status">
             {% for stat in status_options %}
             <option value="{{ stat }}" {% if appliance.status == stat %}selected{% endif %}>{{ stat }}</option>
             {% endfor %}
         </select><br>
         Notes: <input name="notes" value="{{ appliance.notes }}"><br>
-        <div id="invoice-field" style="display: none;">
-            Invoice: <input type="file" name="invoice" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx"><br>
+
+        <div class="invoice-section">
+            Invoice:
             {% if appliance.invoice_file %}
-            <a href="/invoices/{{ appliance.invoice_file }}">View Invoice</a>
+                <div class="invoice-status on-file">✔ Invoice on file —
+                    <a href="/invoices/{{ appliance.invoice_file }}" target="_blank">View</a>
+                </div>
+                <label style="font-size: 0.9em; color: #555;">Replace invoice (optional):</label><br>
+            {% else %}
+                <div class="invoice-status none">No invoice on file.</div>
+                <label style="font-size: 0.9em; color: #555;">Upload invoice (optional):</label><br>
             {% endif %}
+            <input type="file" name="invoice" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx">
         </div>
+
+        <br>
         <input type="submit" value="Update">
     </form>
     <br>
     <a href="/list">Back to List</a>
-
-    <script>
-    function toggleInvoiceField() {
-        var status = document.getElementById('status-select').value;
-        if (status === "Delivered" || status === "Loaded") {
-            document.getElementById('invoice-field').style.display = "block";
-        } else {
-            document.getElementById('invoice-field').style.display = "none";
-        }
-    }
-    window.onload = toggleInvoiceField;
-    </script>
 </body>
 </html>
