@@ -74,36 +74,22 @@ from datetime import datetime
 
 @app.route('/sync-all', methods=['POST'])
 def sync_all():
-
-    data = request.get_json()
-
-    if not data:
-        return {'success': False, 'message': 'No data received'}
-
     try:
+        unsynced = Appliance.query.filter_by(synced=False).all()
+        if not unsynced:
+            flash('Nothing to sync.', 'success')
+            return redirect(request.referrer or '/tech-dashboard')
 
-        for item in data:
-
-            appliance = Appliance.query.get(item['appliance_id'])
-
-            if appliance:
-
-                appliance.status = item['status']
-                appliance.notes = item['notes']
-                appliance.synced = True
+        for appliance in unsynced:
+            appliance.synced = True
 
         db.session.commit()
-
-        return {'success': True}
-
+        flash(f'Successfully synced {len(unsynced)} item(s).', 'success')
     except Exception as e:
-
         db.session.rollback()
+        flash(f'Sync failed: {str(e)}', 'error')
 
-        return {
-            'success': False,
-            'message': str(e)
-        }, 500
+    return redirect(request.referrer or '/tech-dashboard')
     
 @app.context_processor
 def inject_unsynced_count():
