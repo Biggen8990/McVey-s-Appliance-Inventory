@@ -440,17 +440,40 @@ def edit_appliance_web(store_name, item_number):
             db.session.add(new_history)
         app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Invoice logic...
-        if app_rec.status.lower() in ["delivered", "loaded"]:
-            file = request.files.get('invoice')
-            if file and file.filename:
-                filename = file.filename
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                app_rec.invoice_file = filename
-                flash('Invoice Added Successfully', 'success')
+        @app.route('/edit/<store_name>/<item_number>', methods=['GET', 'POST'])
+def edit_appliance_web(store_name, item_number):
+    app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
+    if not app_rec:
+        return 'Appliance not found', 404
+    if request.method == 'POST':
+        old_store = app_rec.store_name
+        old_item = app_rec.item_number
+        old_status = app_rec.status
+        app_rec.store_name = request.form['store_name']
+        app_rec.item_number = request.form['item_number']
+        app_rec.brand = request.form['brand']
+        app_rec.model = request.form['model']
+        app_rec.serial = request.form['serial']
+        app_rec.status = request.form['status']
+        app_rec.notes = request.form['notes']
+        if app_rec.status != old_status:
+            new_history = StatusHistory(
+                appliance_id=app_rec.id,
+                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                status=app_rec.status
+            )
+            db.session.add(new_history)
+        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Save invoice if one was uploaded
+        file = request.files.get('invoice')
+        if file and file.filename:
+            filename = file.filename
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            app_rec.invoice_file = filename
+            flash('Invoice saved successfully.', 'success')
         db.session.commit()
         log_action('edit', f'Edited {app_rec.store_name}/{app_rec.item_number}')
-        flash('Appliance Updated', 'success')
-        # If store or item number changed, redirect to the new edit URL
+        flash('Appliance updated.', 'success')
         if (app_rec.store_name != old_store) or (app_rec.item_number != old_item):
             return redirect(f"/edit/{app_rec.store_name}/{app_rec.item_number}")
         return redirect('/list')
