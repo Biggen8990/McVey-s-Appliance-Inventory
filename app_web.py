@@ -440,7 +440,7 @@ def edit_appliance_web(store_name, item_number):
             db.session.add(new_history)
         app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Invoice logic...
-        @app.route('/edit/<store_name>/<item_number>', methods=['GET', 'POST'])
+@app.route('/edit/<store_name>/<item_number>', methods=['GET', 'POST'])
 def edit_appliance_web(store_name, item_number):
     app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
     if not app_rec:
