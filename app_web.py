@@ -11,8 +11,6 @@ db_url = os.environ.get('DATABASE_URL', '')
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['DEMO_MODE'] = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
 
 db = SQLAlchemy(app)
@@ -40,10 +38,9 @@ class Appliance(db.Model):
     notes = db.Column(db.String(255))
     archived = db.Column(db.Boolean, default=False)
     invoice_file = db.Column(db.String(255))
-    last_updated = db.Column(db.String(30), nullable=False, default=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     synced = db.Column(db.Boolean, default=False)
     last_updated = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
-    onupdate=lambda: datetime.now(timezone.utc)
+        onupdate=lambda: datetime.now(timezone.utc)
     )
 class StatusHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -430,32 +427,6 @@ def edit_appliance_web(store_name, item_number):
         app_rec.serial = request.form['serial']
         app_rec.status = request.form['status']
         app_rec.notes = request.form['notes']
-        # Status history log
-        if app_rec.status != old_status:
-            new_history = StatusHistory(
-                appliance_id=app_rec.id,
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                status=app_rec.status
-            )
-            db.session.add(new_history)
-        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Invoice logic...
-@app.route('/edit/<store_name>/<item_number>', methods=['GET', 'POST'])
-def edit_appliance_web(store_name, item_number):
-    app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
-    if not app_rec:
-        return 'Appliance not found', 404
-    if request.method == 'POST':
-        old_store = app_rec.store_name
-        old_item = app_rec.item_number
-        old_status = app_rec.status
-        app_rec.store_name = request.form['store_name']
-        app_rec.item_number = request.form['item_number']
-        app_rec.brand = request.form['brand']
-        app_rec.model = request.form['model']
-        app_rec.serial = request.form['serial']
-        app_rec.status = request.form['status']
-        app_rec.notes = request.form['notes']
         if app_rec.status != old_status:
             new_history = StatusHistory(
                 appliance_id=app_rec.id,
@@ -730,10 +701,7 @@ def force_db_fix():
 
     return "Database fix attempted."
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-
-if __name__ == '__main__':
     app.run(debug=True)
-
