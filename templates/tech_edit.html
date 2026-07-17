@@ -30,10 +30,15 @@ document.querySelector('form').addEventListener('submit', async function(e) {
     if (!navigator.onLine) {
         e.preventDefault();
 
+        const modelField = document.querySelector('[name="verified_model"]');
+        const serialField = document.querySelector('[name="verified_serial"]');
+
         const formData = {
             appliance_id: "{{ appliance.id }}",
             status: document.querySelector('[name="status"]').value,
             notes: document.querySelector('[name="notes"]').value,
+            verified_model: modelField ? modelField.value : null,
+            verified_serial: serialField ? serialField.value : null,
             timestamp: new Date().toISOString()
         };
 

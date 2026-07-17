@@ -19,7 +19,6 @@
     </style>
 </head>
 <body>
-    </div>
     {% include 'navbar.html' %}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -40,9 +39,11 @@
             <th>Serial</th>
             <th>Status</th>
             <th>Notes</th>
+            <th>Last Updated</th>
+            <th>Details</th>
+            <th>Edit</th>
             <th>Invoice</th>
             <th>Action</th>
-            <th>Last Update</th>
         </tr>
         {% for app in appliances %}
         <tr>
@@ -53,9 +54,7 @@
             <td>{{ app.serial }}</td>
             <td>{{ app.status }}</td>
             <td>{{ app.notes }}</td>
-            <td>{{ app.invoice }}</td>
-            <td>{{ app.action}}</td>
-            <td>{{ app.last_update}}</td>
+            <td>{{ app.last_updated }}</td>
             <td><a href="/details/{{ app.store_name }}/{{ app.item_number }}">Details</a></td>
             <td><a href="/edit/{{ app.store_name }}/{{ app.item_number }}">Edit</a></td>
             <td>

@@ -12,6 +12,10 @@ if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['DEMO_MODE'] = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
+# Secret key required in the URL (e.g. ?key=...) to use the emergency setup/fix
+# routes below. Set SETUP_KEY in Render's environment variables — don't leave
+# it as the 'changeme' default.
+app.config['SETUP_KEY'] = os.environ.get('SETUP_KEY', 'changeme')
 
 db = SQLAlchemy(app)
 
@@ -19,6 +23,8 @@ from datetime import datetime, timezone
 
 @app.route("/init-db")
 def init_db():
+    if request.args.get('key') != app.config['SETUP_KEY']:
+        return "Not authorized.", 403
     with app.app_context():
         db.create_all()
     return "Database initialized!"
@@ -26,6 +32,15 @@ def init_db():
 @app.context_processor
 def inject_demo_mode():
     return dict(demo_mode=app.config['DEMO_MODE'])
+
+@app.context_processor
+def inject_user():
+    # Makes `user` available in every template automatically,
+    # so navbar.html (and anything else) never crashes for lack of it.
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    return dict(user=user)
 
 class Appliance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,6 +86,8 @@ from datetime import datetime
 
 @app.route('/sync-all', methods=['POST'])
 def sync_all():
+    if session.get('role') not in ('tech', 'admin'):
+        return redirect('/')
     try:
         unsynced = Appliance.query.filter_by(synced=False).all()
         if not unsynced:
@@ -165,7 +182,7 @@ from werkzeug.security import generate_password_hash
 def change_password(user_id):
     # Only allow admin or the user themselves to change password
     user = User.query.get(user_id)
-    if not user or (session['role'] != 'admin' and session['username'] != user.username):
+    if not user or (session.get('role') != 'admin' and session.get('username') != user.username):
         return redirect('/')
     error = None
     if request.method == 'POST':
@@ -381,6 +398,8 @@ from flask import flash
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_appliance_web():
+    if session.get('role') != 'admin':
+        return redirect('/')
     if request.method == 'POST':
         new_app = Appliance(
             store_name=request.form['store_name'],
@@ -413,6 +432,8 @@ from flask import flash
 
 @app.route('/edit/<store_name>/<item_number>', methods=['GET', 'POST'])
 def edit_appliance_web(store_name, item_number):
+    if session.get('role') != 'admin':
+        return redirect('/')
     app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
     if not app_rec:
         return 'Appliance not found', 404
@@ -452,11 +473,15 @@ def edit_appliance_web(store_name, item_number):
 
 @app.route('/list')
 def list_appliances_web():
+    if session.get('role') != 'admin':
+        return redirect('/')
     active = Appliance.query.filter_by(archived=False).all()
     return render_template('list.html', appliances=active)
 
 @app.route('/details/<store_name>/<item_number>')
 def details_web(store_name, item_number):
+    if session.get('role') != 'admin':
+        return redirect('/')
     app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
     if not app_rec:
         return 'Appliance not found', 404
@@ -466,6 +491,8 @@ from datetime import datetime
 
 @app.route('/archived')
 def view_archived_web():
+    if session.get('role') != 'admin':
+        return redirect('/')
     archived = Appliance.query.filter_by(archived=True).all()
     return render_template('archived.html', appliances=archived)
 
@@ -474,6 +501,8 @@ from flask import flash
 
 @app.route('/archive/<store_name>/<item_number>', methods=['POST'])
 def archive_web(store_name, item_number):
+    if session.get('role') != 'admin':
+        return redirect('/')
     app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number).first()
     if app_rec:
         if app_rec.archived:
@@ -493,6 +522,8 @@ from flask import flash
 
 @app.route('/unarchive/<store_name>/<item_number>', methods=['POST'])
 def unarchive_web(store_name, item_number):
+    if session.get('role') != 'admin':
+        return redirect('/')
     app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number, archived=True).first()
     if app_rec:
         app_rec.archived = False
@@ -505,6 +536,8 @@ def unarchive_web(store_name, item_number):
 
 @app.route('/invoice-search', methods=['GET', 'POST'])
 def invoice_search():
+    if session.get('role') != 'admin':
+        return redirect('/')
     results = []
     query = ""
     if request.method == 'POST':
@@ -526,7 +559,7 @@ def tech_edit_appliance(store_name, item_number):
         return "Appliance not found", 404
 
     # Only allow techs to access (and optionally their assigned store)
-    if session['role'] != 'tech':
+    if session.get('role') != 'tech':
         return redirect('/')
 
     # Check if any StatusHistory exists for this appliance where status != "In"
@@ -557,7 +590,7 @@ def tech_edit_appliance(store_name, item_number):
         # Log the status change
         new_history = StatusHistory(
             appliance_id=app_rec.id,
-            user_id=session['user_id'],  # You should set this when logging in
+            user_id=session.get('user_id'),  # You should set this when logging in
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             status=new_status,
             verified_model=verified_model,
@@ -631,6 +664,8 @@ def tech_lookup():
 
 @app.route('/store-portal')
 def store_portal():
+    if session.get('role') not in ('store', 'admin'):
+        return redirect('/')
     store = session.get('store')
     store_items = Appliance.query.filter_by(store_name=store, archived=False).all()
     user = User.query.filter_by(username=session['username']).first()
@@ -638,6 +673,8 @@ def store_portal():
 
 @app.route('/invoices/<filename>')
 def uploaded_file(filename):
+    if session.get('role') != 'admin':
+        return redirect('/')
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 from flask import flash
@@ -665,6 +702,8 @@ def search_appliances():
 
 @app.route('/create-default-admin')
 def create_default_admin():
+    if request.args.get('key') != app.config['SETUP_KEY']:
+        return "Not authorized.", 403
     from werkzeug.security import generate_password_hash
     if User.query.filter_by(username='admin').first():
         return "Admin user already exists."
@@ -681,6 +720,8 @@ def create_default_admin():
 
 @app.route('/force-db-fix')
 def force_db_fix():
+    if request.args.get('key') != app.config['SETUP_KEY']:
+        return "Not authorized.", 403
     try:
         with db.engine.connect() as conn:
             conn.execute(db.text(

@@ -41,9 +41,6 @@
             <th>Serial</th>
             <th>Status</th>
             <th>Notes</th>
-            {% if appliances and appliances[0].invoice_file %}
-            <th>Invoice</th>
-            {% endif %}
         </tr>
         {% for app in appliances %}
         <tr>
@@ -53,13 +50,11 @@
             <td>{{ app.serial }}</td>
             <td>{{ app.status }}</td>
             <td>{{ app.notes }}</td>
-            {% if app.invoice_file %}
-            <td><a href="/invoices/{{ app.invoice_file }}">View Invoice</a></td>
-            {% endif %}
         </tr>
         {% endfor %}
     </table>
     <br>
     <!-- No edit or archive buttons, strictly view-only -->
+    <!-- Invoices are managed by the admin; store/customer users don't get digital access. -->
 </body>
 </html>

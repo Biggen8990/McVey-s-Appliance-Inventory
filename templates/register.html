@@ -24,15 +24,6 @@
     {% endwith %}
     <h2>Register New User</h2>
     {% if error %}<span class="error">{{ error }}</span><br>{% endif %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class="flashes">
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
     <form method="post">
         <label>Username:</label><br>
         <input name="username" required><br>

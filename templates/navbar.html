@@ -51,3 +51,97 @@
     </form>
 </div>
 {% endif %}
+
+{% if session['role'] == 'tech' %}
+<div id="offline-sync-banner" style="
+    background-color: #fff8e1;
+    color: #6d4c00;
+    padding: 10px;
+    font-weight: bold;
+    border: 2px solid #f9a825;
+    margin-bottom: 10px;
+    display: none;
+">
+    📴 <span id="offline-sync-count">0</span> offline change(s) waiting to sync.
+    <button type="button" id="offline-sync-retry" style="margin-left: 10px; cursor: pointer;">Try Now</button>
+</div>
+<script>
+(function () {
+    function getPending() {
+        try {
+            return JSON.parse(localStorage.getItem('unsyncedChanges') || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function savePending(list) {
+        localStorage.setItem('unsyncedChanges', JSON.stringify(list));
+    }
+
+    function updateBanner() {
+        const pending = getPending();
+        const banner = document.getElementById('offline-sync-banner');
+        const count = document.getElementById('offline-sync-count');
+        if (!banner) return;
+        if (pending.length > 0) {
+            banner.style.display = 'flex';
+            banner.style.alignItems = 'center';
+            count.textContent = pending.length;
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    async function trySync() {
+        const pending = getPending();
+        if (pending.length === 0 || !navigator.onLine) {
+            updateBanner();
+            return;
+        }
+
+        try {
+            const response = await fetch('/tech-sync-offline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ changes: pending })
+            });
+
+            if (!response.ok) {
+                updateBanner();
+                return;
+            }
+
+            const data = await response.json();
+            const stillPending = [];
+            const failures = [];
+
+            data.results.forEach((result, i) => {
+                if (!result.success) {
+                    stillPending.push(pending[i]);
+                    failures.push(result.message);
+                }
+            });
+
+            savePending(stillPending);
+            updateBanner();
+
+            if (failures.length > 0) {
+                alert('Some offline changes could not be synced automatically:\n\n' + failures.join('\n'));
+            }
+        } catch (e) {
+            // Still offline or server unreachable — leave changes queued, try again later.
+            updateBanner();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        updateBanner();
+        trySync();
+        const btn = document.getElementById('offline-sync-retry');
+        if (btn) btn.addEventListener('click', trySync);
+    });
+    window.addEventListener('online', trySync);
+})();
+</script>
+{% endif %}
