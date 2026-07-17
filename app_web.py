@@ -29,73 +29,6 @@ def init_db():
         db.create_all()
     return "Database initialized!"
 
-# TEMPORARY DEBUG ROUTE - remove after diagnosing tech-lookup item-number search.
-# Reuses the SETUP_KEY pattern from /init-db above so it isn't publicly exposed.
-@app.route("/debug-item-lookup")
-def debug_item_lookup():
-    from flask import jsonify
-    if request.args.get('key') != app.config['SETUP_KEY']:
-        return "Not authorized.", 403
-    item = request.args.get('item', '').strip()
-    ilike_matches = Appliance.query.filter(Appliance.item_number.ilike(f"%{item}%")).all()
-    exact_matches = Appliance.query.filter_by(item_number=item).all()
-    sample = Appliance.query.limit(25).all()
-    return jsonify({
-        'searched_for': repr(item),
-        'ilike_match_count': len(ilike_matches),
-        'exact_match_count': len(exact_matches),
-        'ilike_matches': [
-            {'item_number': repr(a.item_number), 'store_name': repr(a.store_name), 'archived': a.archived}
-            for a in ilike_matches
-        ],
-        'sample_item_numbers': [repr(a.item_number) for a in sample],
-    })
-
-# TEMPORARY: simulates the exact /tech-lookup branching logic via GET, bypassing
-# session/login, so we can see precisely what the real route would do.
-@app.route("/debug-tech-lookup-sim")
-def debug_tech_lookup_sim():
-    from flask import jsonify
-    if request.args.get('key') != app.config['SETUP_KEY']:
-        return "Not authorized.", 403
-    store = request.args.get('store_name', '').strip()
-    item = request.args.get('item_number', '').strip()
-    query = Appliance.query.filter_by(archived=False)
-    results = []
-    branch = None
-
-    if store and item:
-        branch = 'store_and_item'
-        results = query.filter(
-            Appliance.store_name.ilike(f"%{store}%"),
-            Appliance.item_number.ilike(f"%{item}%")
-        ).all()
-    elif store:
-        branch = 'store_only'
-        results = query.filter(Appliance.store_name.ilike(f"%{store}%")).all()
-    elif item:
-        branch = 'item_only'
-        results = query.filter(Appliance.item_number.ilike(f"%{item}%")).all()
-    else:
-        branch = 'neither'
-        results = query.all()
-
-    outcome = None
-    if not results:
-        outcome = 'flash_no_results_redirect_to_tech_dashboard'
-    elif len(results) == 1:
-        outcome = f'redirect_to_details/{results[0].store_name}/{results[0].item_number}'
-    else:
-        outcome = f'render_results_list ({len(results)} results)'
-
-    return jsonify({
-        'received_store_name': repr(store),
-        'received_item_number': repr(item),
-        'branch_taken': branch,
-        'result_count': len(results),
-        'outcome': outcome,
-    })
-
 @app.context_processor
 def inject_demo_mode():
     return dict(demo_mode=app.config['DEMO_MODE'])
@@ -455,7 +388,6 @@ def admin_dashboard():
         summary.setdefault(store, {})
         summary[store][status] = summary[store].get(status, 0) + 1
     return render_template('admin_dashboard.html', summary=summary, appliances=appliances)
-
 
 UPLOAD_FOLDER = 'invoices'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
