@@ -613,6 +613,83 @@ def tech_edit_appliance(store_name, item_number):
         status_options=STATUS_OPTIONS
         )
 
+from flask import jsonify
+
+@app.route('/tech-sync-offline', methods=['POST'])
+def tech_sync_offline():
+    # Receives a batch of status changes a tech's browser saved while offline
+    # and applies them now that the connection is back.
+    if session.get('role') not in ('tech', 'admin'):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    data = request.get_json(silent=True) or {}
+    changes = data.get('changes', [])
+    results = []
+
+    for change in changes:
+        appliance_id = change.get('appliance_id')
+        try:
+            appliance_id = int(appliance_id)
+        except (TypeError, ValueError):
+            appliance_id = None
+        app_rec = Appliance.query.get(appliance_id) if appliance_id else None
+
+        if not app_rec:
+            results.append({
+                'appliance_id': appliance_id,
+                'success': False,
+                'message': 'Appliance not found. This change was not applied — please redo it manually.'
+            })
+            continue
+
+        first_change = not StatusHistory.query.filter(
+            StatusHistory.appliance_id == app_rec.id,
+            StatusHistory.status != 'In'
+        ).first()
+
+        verified_model = change.get('verified_model') or None
+        verified_serial = change.get('verified_serial') or None
+
+        if first_change and (not verified_model or not verified_serial):
+            results.append({
+                'appliance_id': appliance_id,
+                'success': False,
+                'message': f'Model and Serial are required for the first status change on '
+                           f'{app_rec.store_name}/{app_rec.item_number}. Please redo this one manually.'
+            })
+            continue
+
+        new_history = StatusHistory(
+            appliance_id=app_rec.id,
+            user_id=session.get('user_id'),
+            timestamp=change.get('timestamp') or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            status=change.get('status'),
+            verified_model=verified_model,
+            verified_serial=verified_serial
+        )
+        db.session.add(new_history)
+
+        app_rec.status = change.get('status')
+        app_rec.notes = change.get('notes')
+        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        try:
+            db.session.commit()
+            results.append({
+                'appliance_id': appliance_id,
+                'success': True,
+                'message': f'Synced {app_rec.store_name}/{app_rec.item_number}.'
+            })
+        except Exception as e:
+            db.session.rollback()
+            results.append({
+                'appliance_id': appliance_id,
+                'success': False,
+                'message': f'Failed to save: {str(e)}'
+            })
+
+    return jsonify({'results': results})
+
 @app.route('/tech-dashboard', methods=['GET', 'POST'])
 def tech_dashboard():
     if session.get('role') != 'tech':
@@ -645,11 +722,14 @@ def tech_lookup():
     results = []
 
     if store and item:
-        results = query.filter_by(store_name=store, item_number=item).all()
+        results = query.filter(
+            Appliance.store_name.ilike(f"%{store}%"),
+            Appliance.item_number.ilike(f"%{item}%")
+        ).all()
     elif store:
-        results = query.filter_by(store_name=store).all()
+        results = query.filter(Appliance.store_name.ilike(f"%{store}%")).all()
     elif item:
-        results = query.filter_by(item_number=item).all()
+        results = query.filter(Appliance.item_number.ilike(f"%{item}%")).all()
     else:
         results = query.all()  # Show all active if nothing entered
 
