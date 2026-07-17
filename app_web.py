@@ -29,6 +29,28 @@ def init_db():
         db.create_all()
     return "Database initialized!"
 
+# TEMPORARY DEBUG ROUTE - remove after diagnosing tech-lookup item-number search.
+# Reuses the SETUP_KEY pattern from /init-db above so it isn't publicly exposed.
+@app.route("/debug-item-lookup")
+def debug_item_lookup():
+    from flask import jsonify
+    if request.args.get('key') != app.config['SETUP_KEY']:
+        return "Not authorized.", 403
+    item = request.args.get('item', '').strip()
+    ilike_matches = Appliance.query.filter(Appliance.item_number.ilike(f"%{item}%")).all()
+    exact_matches = Appliance.query.filter_by(item_number=item).all()
+    sample = Appliance.query.limit(25).all()
+    return jsonify({
+        'searched_for': repr(item),
+        'ilike_match_count': len(ilike_matches),
+        'exact_match_count': len(exact_matches),
+        'ilike_matches': [
+            {'item_number': repr(a.item_number), 'store_name': repr(a.store_name), 'archived': a.archived}
+            for a in ilike_matches
+        ],
+        'sample_item_numbers': [repr(a.item_number) for a in sample],
+    })
+
 @app.context_processor
 def inject_demo_mode():
     return dict(demo_mode=app.config['DEMO_MODE'])
