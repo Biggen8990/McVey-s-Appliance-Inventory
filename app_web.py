@@ -786,19 +786,27 @@ def search_appliances():
 def create_default_admin():
     if request.args.get('key') != app.config['SETUP_KEY']:
         return "Not authorized.", 403
-    from werkzeug.security import generate_password_hash
-    if User.query.filter_by(username='admin').first():
+    
+    admin_username = os.environ.get('INITIAL_ADMIN_USERNAME')
+    admin_password = os.environ.get('INITIAL_ADMIN_PASSWORD')
+    
+    if not admin_username or not admin_password:
+        return "Initial admin credentials are not configured.", 500
+    
+    if User.query.filter_by(username=admin_username).first():
         return "Admin user already exists."
+    
     admin = User(
-        username="admin",
-        password_hash=generate_password_hash("main", method="pbkdf2:sha256"),
+        username=admin_username,
+        password_hash=generate_password_hash(admin_password, method="pbkdf2:sha256"),
         role="admin",
         store=None,
-        active=True  # If you have an `active` field
+        active=True
     )
+    
     db.session.add(admin)
     db.session.commit()
-    return "Admin user created! You can now log in as admin/main."
+    return "Admin user created successfully."
 
 @app.route('/force-db-fix')
 def force_db_fix():
