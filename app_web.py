@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 import csv
 import requests
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
@@ -395,8 +397,9 @@ def admin_dashboard():
 UPLOAD_FOLDER = 'invoices'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-from flask import flash
+ALLOWED_INVOICE_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
+def allowed_invoice_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_INVOICE_EXTENSIONS
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_appliance_web():
@@ -460,11 +463,13 @@ def edit_appliance_web(store_name, item_number):
         app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Save invoice if one was uploaded
         file = request.files.get('invoice')
-        if file and file.filename:
-            filename = file.filename
+        if file and file.filename and allowed_invoice_file(file.filename):
+            filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             app_rec.invoice_file = filename
             flash('Invoice saved successfully.', 'success')
+        elif file and file.filename:
+            flash('Invalid invoice file type. Please upload a PDF, PNG, JPG, or JPEG file.', 'error')
         db.session.commit()
         log_action('edit', f'Edited {app_rec.store_name}/{app_rec.item_number}')
         flash('Appliance updated.', 'success')
