@@ -5,7 +5,9 @@ import csv
 import requests
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'
+app.secret_key = os.environ.get('SECRET_KEY')
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY environment variable is not set.")
 
 db_url = os.environ.get('DATABASE_URL', '')
 if db_url.startswith('postgres://'):
