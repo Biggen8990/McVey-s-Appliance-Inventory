@@ -15,9 +15,10 @@ if db_url.startswith('postgres://'):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['DEMO_MODE'] = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
 # Secret key required in the URL (e.g. ?key=...) to use the emergency setup/fix
-# routes below. Set SETUP_KEY in Render's environment variables — don't leave
-# it as the 'changeme' default.
-app.config['SETUP_KEY'] = os.environ.get('SETUP_KEY', 'changeme')
+# routes below. SETUP_KEY must be configured as an environment variable.
+app.config['SETUP_KEY'] = os.environ.get('SETUP_KEY')
+if not app.config['SETUP_KEY']:
+    raise RuntimeError("SETUP_KEY environment variable is not set.")
 
 db = SQLAlchemy(app)
 
