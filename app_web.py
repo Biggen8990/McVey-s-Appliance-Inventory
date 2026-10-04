@@ -613,7 +613,7 @@ def tech_edit_appliance(store_name, item_number):
 
         db.session.commit()
         flash("Status updated.", "success")
-        return redirect('/store-portal')
+        return redirect('/tech-dashboard')
 
     return render_template(
         'tech_edit.html',
