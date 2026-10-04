@@ -11,6 +11,8 @@ app.secret_key = os.environ.get('SECRET_KEY')
 if not app.secret_key:
     raise RuntimeError("SECRET_KEY environment variable is not set.")
 
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
+
 db_url = os.environ.get('DATABASE_URL', '')
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
