@@ -2,7 +2,6 @@ from flask import Flask, render_template, redirect, session, url_for, send_from_
 from flask_sqlalchemy import SQLAlchemy
 import os
 import csv
-import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
