@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory, flash, get_flashed_messages
+from flask import Flask, render_template, redirect, session, url_for, send_from_directory, flash, get_flashed_messages
 from flask_sqlalchemy import SQLAlchemy
 import os
 import csv
@@ -25,8 +25,6 @@ if not app.config['SETUP_KEY']:
     raise RuntimeError("SETUP_KEY environment variable is not set.")
 
 db = SQLAlchemy(app)
-
-from datetime import datetime, timezone
 
 @app.route("/init-db")
 def init_db():
@@ -89,8 +87,6 @@ class User(db.Model):
     store = db.Column(db.String(80))  # Only for stores
     active = db.Column(db.Boolean, default=True)
 
-from datetime import datetime
-
 @app.route('/sync-all', methods=['POST'])
 def sync_all():
     if session.get('role') not in ('tech', 'admin'):
@@ -129,8 +125,6 @@ def log_action(action, details):
     )
     db.session.add(entry)
     db.session.commit()
-
-from werkzeug.security import check_password_hash
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -183,8 +177,6 @@ def activate_user(user_id):
         flash("User activated.", "success")
     return redirect('/manage-users')
 
-from werkzeug.security import generate_password_hash
-
 @app.route('/change-password/<int:user_id>', methods=['GET', 'POST'])
 def change_password(user_id):
     # Only allow admin or the user themselves to change password
@@ -199,8 +191,6 @@ def change_password(user_id):
         flash('Password changed successfully', 'success')
         return redirect('/manage-users')
     return render_template('change_password.html', user=user, error=error)
-
-from werkzeug.security import generate_password_hash
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -229,8 +219,6 @@ def register():
             flash('User created successfully!', 'success')
             return redirect('/admin-dashboard')
     return render_template('register.html', error=error)
-
-from flask import Response
 
 @app.route('/file-options')
 def file_options_web():
@@ -344,10 +332,6 @@ def bulk_actions_web():
     stores = sorted(set(app.store_name for app in Appliance.query.all()))
     return render_template('bulk_actions.html', stores=stores, status_options=STATUS_OPTIONS, message=message)
 
-import csv
-import io
-from flask import Response
-
 @app.route('/export-csv')
 def export_csv_web():
     if session.get('role') != 'admin':
@@ -434,9 +418,6 @@ def view_audit_log():
     log = AuditLog.query.order_by(AuditLog.timestamp.desc()).all()
     return render_template('view_audit_log.html', log=log)
 
-from datetime import datetime
-from flask import flash
-
 @app.route('/edit/<store_name>/<item_number>', methods=['GET', 'POST'])
 def edit_appliance_web(store_name, item_number):
     if session.get('role') != 'admin':
@@ -496,17 +477,12 @@ def details_web(store_name, item_number):
         return 'Appliance not found', 404
     return render_template('details.html', appliance=app_rec)
 
-from datetime import datetime
-
 @app.route('/archived')
 def view_archived_web():
     if session.get('role') != 'admin':
         return redirect('/')
     archived = Appliance.query.filter_by(archived=True).all()
     return render_template('archived.html', appliances=archived)
-
-from datetime import datetime
-from flask import flash
 
 @app.route('/archive/<store_name>/<item_number>', methods=['POST'])
 def archive_web(store_name, item_number):
@@ -525,9 +501,6 @@ def archive_web(store_name, item_number):
         return redirect('/list')
     flash("Appliance not found.", "error")
     return redirect('/list')
-
-from datetime import datetime
-from flask import flash
 
 @app.route('/unarchive/<store_name>/<item_number>', methods=['POST'])
 def unarchive_web(store_name, item_number):
@@ -599,7 +572,7 @@ def tech_edit_appliance(store_name, item_number):
         # Log the status change
         new_history = StatusHistory(
             appliance_id=app_rec.id,
-            user_id=session.get('user_id'),  # You should set this when logging in
+            user_id=session.get('user_id'),
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             status=new_status,
             verified_model=verified_model,
@@ -621,8 +594,6 @@ def tech_edit_appliance(store_name, item_number):
         first_change=first_change,
         status_options=STATUS_OPTIONS
         )
-
-from flask import jsonify
 
 @app.route('/tech-sync-offline', methods=['POST'])
 def tech_sync_offline():
@@ -765,8 +736,6 @@ def uploaded_file(filename):
     if session.get('role') != 'admin':
         return redirect('/')
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-from flask import flash
 
 @app.route('/search', methods=['GET', 'POST'])
 def search_appliances():
