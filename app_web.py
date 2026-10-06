@@ -280,10 +280,12 @@ def import_csv_web():
     file = request.files.get('csvfile')
     if not file:
         return redirect('/file-options')
-    import io
     stream = io.StringIO(file.stream.read().decode('UTF8'), newline=None)
     reader = csv.DictReader(stream)
     for row in reader:
+        status = row.get('status', '')
+        if not valid_status(status):
+            continue
         if 'store_name' in row and 'item_number' in row:
             exists = Appliance.query.filter_by(
                 store_name=row['store_name'],
@@ -296,7 +298,7 @@ def import_csv_web():
                     brand=row.get('brand', ''),
                     model=row.get('model', ''),
                     serial=row.get('serial', ''),
-                    status=row.get('status', ''),
+                    status=status,
                     notes=row.get('notes', ''),
                     archived=False,
                     invoice_file=None
@@ -313,6 +315,9 @@ def bulk_actions_web():
     if request.method == 'POST':
         store = request.form['store_name']
         status = request.form['status']
+        if not valid_status(status):
+            flash('Invalid appliance status.', 'error')
+            return redirect('/bulk-actions')
         action = request.form['action']
         count = 0
 
@@ -365,6 +370,9 @@ def logout():
 
 STATUS_OPTIONS = ["Loaded/Inbound", "In", "Checked", "Parts Ordered", "Repaired", "Loaded/Out Bound", "Delivered"]
 
+def valid_status(status):
+    return status in STATUS_OPTIONS
+
 @app.route('/admin-dashboard')
 def admin_dashboard():
     if session.get('role') != 'admin':
@@ -391,13 +399,18 @@ def add_appliance_web():
     if session.get('role') != 'admin':
         return redirect('/')
     if request.method == 'POST':
+        status = request.form['status']
+
+        if not valid_status(status):
+            flash('Invalid appliance status.', 'error')
+            return redirect('/add')
         new_app = Appliance(
             store_name=request.form['store_name'],
             item_number=request.form['item_number'],
             brand=request.form['brand'],
             model=request.form['model'],
             serial=request.form['serial'],
-            status=request.form['status'],
+            status=status,
             notes=request.form['notes'],
             archived=False,
             invoice_file=None
@@ -425,6 +438,11 @@ def edit_appliance_web(store_name, item_number):
     if not app_rec:
         return 'Appliance not found', 404
     if request.method == 'POST':
+        status = request.form['status']
+
+        if not valid_status(status):
+            flash('Invalid appliance status.', 'error')
+            return redirect(url_for('edit_appliance_web', store_name=store_name, item_number=item_number))
         old_store = app_rec.store_name
         old_item = app_rec.item_number
         old_status = app_rec.status
@@ -433,7 +451,7 @@ def edit_appliance_web(store_name, item_number):
         app_rec.brand = request.form['brand']
         app_rec.model = request.form['model']
         app_rec.serial = request.form['serial']
-        app_rec.status = request.form['status']
+        app_rec.status = status
         app_rec.notes = request.form['notes']
         if app_rec.status != old_status:
             new_history = StatusHistory(
@@ -551,6 +569,9 @@ def tech_edit_appliance(store_name, item_number):
 
     if request.method == 'POST':
         new_status = request.form['status']
+        if not valid_status(new_status):
+            flash('Invalid appliance status.', 'error')
+            return redirect(url_for('tech_edit_appliance', store_name=store_name, item_number=item_number))
         new_notes = request.form['notes']
 
         if first_change:
