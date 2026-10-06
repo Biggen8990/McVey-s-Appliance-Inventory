@@ -200,6 +200,9 @@ def register():
         username = request.form['username']
         password = request.form['password']
         role = request.form['role']
+        if role not in ['admin', 'tech', 'store']:
+            flash('Invalid user role.', 'error')
+            return redirect('/register')
         store = request.form['store'] if role == 'store' else None
 
         # Check if username exists
