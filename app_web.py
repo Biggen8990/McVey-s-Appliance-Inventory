@@ -319,6 +319,9 @@ def bulk_actions_web():
             flash('Invalid appliance status.', 'error')
             return redirect('/bulk-actions')
         action = request.form['action']
+        if action not in ['archive', 'unarchive']:
+            flash('Invalid bulk action.', 'error')
+            return redirect('/bulk-actions')
         count = 0
 
         # Use a database query to get all appliances with the right store and status!
