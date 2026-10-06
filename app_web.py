@@ -132,7 +132,6 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username, active=True).first()
-        print(f"User: {user}, Username: {username}, Password OK: {check_password_hash(user.password_hash, password) if user else 'N/A'}")
         if user and check_password_hash(user.password_hash, password):
             session['username'] = username
             session['role'] = user.role
@@ -544,8 +543,6 @@ def invoice_search():
     query = ""
     if request.method == 'POST':
         query = request.form['query'].strip().lower()
-        print("Query:", query)
-        print("Invoice files in DB:", [a.invoice_file for a in Appliance.query.all()])
         if query:
             results = Appliance.query.filter(
                 Appliance.invoice_file.ilike(f"%{query}%")
