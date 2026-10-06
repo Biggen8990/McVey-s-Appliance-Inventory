@@ -461,6 +461,7 @@ def edit_appliance_web(store_name, item_number):
         if app_rec.status != old_status:
             new_history = StatusHistory(
                 appliance_id=app_rec.id,
+                user_id=session.get('user_id'),
                 timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 status=app_rec.status
             )
@@ -631,6 +632,7 @@ def tech_sync_offline():
 
     for change in changes:
         appliance_id = change.get('appliance_id')
+        new_status = change.get('status')
         try:
             appliance_id = int(appliance_id)
         except (TypeError, ValueError):
@@ -644,7 +646,13 @@ def tech_sync_offline():
                 'message': 'Appliance not found. This change was not applied — please redo it manually.'
             })
             continue
-
+        if not valid_status(new_status):
+            results.append({
+                'appliance_id': appliance_id,
+                'success': False,
+                'message': 'Invalid appliance status. This change was not applied.'
+            })
+            continue
         first_change = not StatusHistory.query.filter(
             StatusHistory.appliance_id == app_rec.id,
             StatusHistory.status != 'In'
@@ -666,13 +674,13 @@ def tech_sync_offline():
             appliance_id=app_rec.id,
             user_id=session.get('user_id'),
             timestamp=change.get('timestamp') or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            status=change.get('status'),
+            status=new_status,
             verified_model=verified_model,
             verified_serial=verified_serial
         )
         db.session.add(new_history)
 
-        app_rec.status = change.get('status')
+        app_rec.status = new_status
         app_rec.notes = change.get('notes')
         app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
