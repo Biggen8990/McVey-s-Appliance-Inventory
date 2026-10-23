@@ -1,8 +1,9 @@
-from flask import Flask, render_template, redirect, session, url_for, send_from_directory, flash, get_flashed_messages
+from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory, flash, get_flashed_messages, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 import os
 import csv
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timezone
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -282,6 +283,7 @@ def import_csv_web():
     file = request.files.get('csvfile')
     if not file:
         return redirect('/file-options')
+    import io
     stream = io.StringIO(file.stream.read().decode('UTF8'), newline=None)
     reader = csv.DictReader(stream)
     for row in reader:
@@ -466,7 +468,7 @@ def edit_appliance_web(store_name, item_number):
                 status=app_rec.status
             )
             db.session.add(new_history)
-        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        app_rec.last_updated = datetime.now(timezone.utc)
         # Save invoice if one was uploaded
         file = request.files.get('invoice')
         if file and file.filename and allowed_invoice_file(file.filename):
@@ -517,7 +519,7 @@ def archive_web(store_name, item_number):
             flash("Item already archived.", "error")
         else:
             app_rec.archived = True
-            app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            app_rec.last_updated = datetime.now(timezone.utc)
             db.session.commit()
             log_action('archive', f'Archived {app_rec.store_name}/{app_rec.item_number}')
             flash("Appliance archived.", "success")
@@ -532,7 +534,7 @@ def unarchive_web(store_name, item_number):
     app_rec = Appliance.query.filter_by(store_name=store_name, item_number=item_number, archived=True).first()
     if app_rec:
         app_rec.archived = False
-        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        app_rec.last_updated = datetime.now(timezone.utc)
         db.session.commit()
         log_action('unarchive', f'Unarchived {app_rec.store_name}/{app_rec.item_number}')
         flash('Item Unarchived', 'success')
@@ -606,7 +608,7 @@ def tech_edit_appliance(store_name, item_number):
 
         app_rec.status = new_status
         app_rec.notes = new_notes
-        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        app_rec.last_updated = datetime.now(timezone.utc)
 
         db.session.commit()
         flash("Status updated.", "success")
@@ -682,7 +684,7 @@ def tech_sync_offline():
 
         app_rec.status = new_status
         app_rec.notes = change.get('notes')
-        app_rec.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        app_rec.last_updated = datetime.now(timezone.utc)
 
         try:
             db.session.commit()
